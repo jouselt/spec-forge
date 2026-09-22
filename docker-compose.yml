@@ -1,0 +1,16 @@
+name: spec-forge
+
+services:
+  # Static Angular app. No backend, no database, no API key, so there is nothing
+  # to configure: `docker compose up` builds the image and serves it.
+  web:
+    image: spec-forge:latest
+    build:
+      context: .
+      # Serves at the root. Change this to a subpath only if you put the app
+      # behind a reverse proxy that mounts it somewhere other than /.
+      args:
+        BASE_HREF: /
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"

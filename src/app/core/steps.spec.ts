@@ -43,6 +43,37 @@ describe('Base Steps', () => {
     }
   });
 
+  it('step 5 validation: 6 rejection cases and 4 acceptance cases', () => {
+    const step5 = BASE_STEPS.find(q => q.id === 'q.proof');
+    if (!step5?.validate) return fail('step 5 should have validate function');
+
+    // 6 rejection cases
+    const rejections = [
+      'it works',
+      'works',
+      'good',
+      'fast',
+      'better',
+      'done',
+    ];
+
+    for (const answer of rejections) {
+      expect(step5.validate(answer)).not.toBeNull(`Expected rejection for: "${answer}"`);
+    }
+
+    // 4 acceptance cases
+    const acceptances = [
+      'Loads in under 2 seconds',
+      '5 of 5 unanswerable questions return an abstain',
+      'P99 latency < 100ms',
+      'Processes 10000 items per second',
+    ];
+
+    for (const answer of acceptances) {
+      expect(step5.validate(answer)).toBeNull(`Expected acceptance for: "${answer}"`);
+    }
+  });
+
   it('step 5 validation should accept measurable answers', () => {
     const step5 = BASE_STEPS.find(q => q.id === 'q.proof');
     if (step5?.validate) {

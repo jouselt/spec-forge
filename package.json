@@ -7,7 +7,6 @@
     "start": "ng serve",
     "build": "npm run typecheck && ng build",
     "typecheck": "tsc --noEmit",
-    "lint": "ng lint",
     "test": "ng test --watch=false --browsers=ChromeHeadless --code-coverage",
     "test:watch": "ng test",
     "prepare": "husky install"
