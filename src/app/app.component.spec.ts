@@ -215,4 +215,68 @@ describe('AppComponent', () => {
     expect(aside.classList.contains('is-hidden')).toBe(!wasHidden);
     expect(toggle.getAttribute('aria-expanded')).toBe(String(wasHidden));
   });
+
+  describe('the bottom bar', () => {
+    function segments(): HTMLElement[] {
+      return Array.from(
+        fixture.nativeElement.querySelectorAll('.stepper-segment') as NodeListOf<HTMLElement>,
+      );
+    }
+
+    function count(): string {
+      return (
+        (fixture.nativeElement.querySelector('.stepper-count') as HTMLElement).textContent?.trim() ??
+        ''
+      );
+    }
+
+    it('should show one segment per question and the position in the footer', () => {
+      expect(segments().length).toBe(9);
+      expect(count()).toBe('1 out of 9');
+    });
+
+    it('should mark the current segment and fill the answered ones', () => {
+      fill('A wizard that interviews you first.');
+
+      expect(segments()[0].classList.contains('is-answered')).toBe(true);
+      expect(segments()[0].classList.contains('is-current')).toBe(true);
+      expect(segments()[1].classList.contains('is-current')).toBe(false);
+    });
+
+    it('should move the current segment when the position changes', () => {
+      store.jumpTo(3);
+      fixture.detectChanges();
+
+      expect(count()).toBe('4 out of 9');
+      expect(segments()[3].classList.contains('is-current')).toBe(true);
+    });
+
+    it('should grow the total when an adaptive follow-up is inserted', () => {
+      store.jumpToQuestion('q.stack');
+      fixture.detectChanges();
+      fill('Ollama on device, PostgreSQL, Docker');
+
+      expect(segments().length).toBe(12);
+      expect(count()).toBe('7 out of 12');
+
+      clickNext();
+
+      // The first local_model follow-up lands right after the stack question.
+      expect(store.current()?.id).toBe('a.ctx_window');
+      expect(segments().length).toBe(12);
+      expect(count()).toBe('8 out of 12');
+    });
+
+    it('should shrink the total when a follow-up is retracted', () => {
+      store.jumpToQuestion('q.stack');
+      fixture.detectChanges();
+      fill('Ollama on device, PostgreSQL, Docker');
+      expect(count()).toBe('7 out of 12');
+
+      fill('PostgreSQL and Docker');
+
+      expect(segments().length).toBe(9);
+      expect(count()).toBe('7 out of 9');
+    });
+  });
 });

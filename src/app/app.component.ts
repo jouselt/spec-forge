@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { QuestionPanelComponent } from './ui/question-panel/question-panel.component';
 import { StepRailComponent } from './ui/step-rail/step-rail.component';
+import { StepStepperComponent } from './ui/step-stepper/step-stepper.component';
 import { WizardStore } from './state/wizard-store.service';
 
 /** Width below which the rail collapses into a toggle, so a phone gets one column. */
@@ -9,7 +10,7 @@ const NARROW_QUERY = '(max-width: 720px)';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [StepRailComponent, QuestionPanelComponent],
+  imports: [StepRailComponent, QuestionPanelComponent, StepStepperComponent],
   template: `
     <div class="app-container">
       <header class="app-header">
@@ -55,6 +56,8 @@ const NARROW_QUERY = '(max-width: 720px)';
           />
         </main>
       </div>
+
+      <app-step-stepper [steps]="store.rail()" />
     </div>
   `,
   styles: [
