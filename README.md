@@ -1,5 +1,10 @@
 # spec-forge
 
+[![Deploy to GitHub Pages](https://github.com/jouselt/spec-forge/actions/workflows/pages.yml/badge.svg)](https://github.com/jouselt/spec-forge/actions/workflows/pages.yml)
+[![CI](https://github.com/jouselt/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/jouselt/spec-forge/actions/workflows/ci.yml)
+
+**[Open the live build](https://jouselt.github.io/spec-forge/)** (currently the Phase 1 shell).
+
 A 100% client-side Angular 20.3 app that interviews users about an idea and produces three markdown files: `proposal.md`, `design.md`, `tasks.md`. Interview first, generate second, never invent.
 
 ## Status
