@@ -10,7 +10,7 @@ export const BASE_STEPS: Question[] = [
     id: 'q.idea',
     step: 1,
     prompt: 'What is the idea? One paragraph.',
-    help: 'A clear, one-sentence summary that a recruiter would understand on a first reading.',
+    help: 'One paragraph. State what it is and who it is for, plainly enough that someone who has never seen it gets it on a first read.',
     kind: 'longtext',
     required: true,
   },

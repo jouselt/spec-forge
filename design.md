@@ -232,7 +232,7 @@ Rules, all enforced in `triggers.ts` and all tested:
 | idea | Goal, Core Features | Architecture header | Phase 1 title |
 | problem, who_has_it, workaround | Problem | | |
 | goal, non_goals | Goal, Scope Boundary | | |
-| proof_metric | Target Recruiter Signal, Acceptance Criteria | Acceptance criteria (design-verifiable) | gate criteria in each phase |
+| proof_metric | Target Signal, Acceptance Criteria | Acceptance criteria (design-verifiable) | gate criteria in each phase |
 | constraints | Constraints Measured Up Front | the constraint section named by the answer | |
 | stack | Tech Stack | Package layout, Provider seams | |
 | scope_out | Scope Boundary | Trade-offs | |
@@ -375,8 +375,8 @@ The fourth guard is the direct answer to the incident that motivated the project
 
 **Structure per file.**
 
-- `proposal.md` has all of: Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Trade-offs (the six present in all eleven existing specs), plus Timeline and Risks.
-- `design.md` has Architecture, Package layout, Provider seams, Validation, Persistence, Trade-offs, What This Proves to a Hiring Manager, Acceptance Criteria, Open Questions.
+- `proposal.md` has all of: Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Trade-offs (the six shared by the existing spec corpus), plus Timeline and Risks.
+- `design.md` has Architecture, Package layout, Provider seams, Validation, Persistence, Trade-offs, What This Proves, Acceptance Criteria, Open Questions.
 - `tasks.md` has at least 3 phases, every item is a checkbox, every item carries one of `[G]` `[E]` `[M]`, and it ends with a Definition of Done.
 
 **Shape.**
@@ -442,7 +442,7 @@ Export reads from the document store, not from the editor buffer content alone, 
 - **LiteRT.js as a second backend.** Worth the seam, not worth blocking on. Its model availability and API surface are less settled than WebLLM's. It ships as a stub that satisfies the interface and fails with a named message, which proves the seam is real without pretending the backend is done.
 - **Adaptive triggers as regex vs using the model to decide what to ask.** The model cannot run before it is loaded, and most users will never load it. Regex plus a checked-in table works with no model, is testable, shows its reason in the UI, and retracts deterministically when an answer changes.
 
-## What This Proves to a Hiring Manager
+## What This Proves
 
 | Piece | Competency it demonstrates |
 | --- | --- |

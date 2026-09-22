@@ -19,13 +19,15 @@ Two things come out of it:
 
 No backend. No API key. No GitHub integration, no token, no repo write. Static files on GitHub Pages, the same deployment model as project 11.
 
-## Target Recruiter Signal
+## Target Signal
 
-A recruiter or a hiring manager opens the page on a laptop with no account. They answer nine steps about an idea they actually have. Step four asks "what proves this worked" and refuses to accept "it works" as an answer. They reach the generate step, see three tabs of markdown, and see a panel that says: 41 of 44 blocks came from your answers, 3 were added by the model and need your review. They confirm two, delete one, download the bundle. Then they open the repo README and find that this app was built from the same three files it produces.
+The signal is the artifact: a finished spec whose every sentence traces to an answer, produced by a run that cannot skip the hard questions.
 
-The candidate then says: "The interesting problem is not generating markdown, it is making sure the markdown cannot invent. Here is where provenance is stored per block, here is the gate that blocks export on unreviewed inferred text, and here is the diff-before-apply that stops a regeneration from reverting work. I built it that way because a tool did that to my own specs."
+A visitor opens the page on a laptop with no account and no model loaded. They answer nine steps about an idea they actually have. Step four asks "what proves this worked" and refuses to accept "it works" as an answer. They reach the generate step, see three tabs of markdown, and see a panel that says: 41 of 44 blocks came from your answers, 3 were added by the model and need your review. They confirm two, delete one, download the bundle.
 
-That conversation is the deliverable. The app is the evidence.
+The interesting problem is not generating markdown, it is making sure the markdown cannot invent. Provenance is stored per block, the gate blocks export on unreviewed inferred text, and the diff before apply stops a regeneration from reverting work. That is what the tool has to prove about itself.
+
+Measured at the end of a run: three files where every block carries an origin, zero inferred blocks with no model loaded, and export enabled without a review step.
 
 ## Constraints Measured Up Front
 
@@ -74,11 +76,11 @@ Measured values are marked. Budgets are marked as budgets, and the app computes 
 
 The generated files match the section structure measured across the eleven existing specs in `portfolio-projects`, which is the corpus this was derived from:
 
-- **`proposal.md`**: Problem, Goal, Target Recruiter Signal, Constraints Measured Up Front, Tech Stack, Core Features, Scope Boundary, Why This Differentiates..., Timeline, Acceptance Criteria, Risks.
-- **`design.md`**: Architecture (ASCII diagram), Package layout, Data model or the equivalent core model, Provider seams, Validation and Provenance, Worker Protocol, Persistence, Trade-offs Considered, What This Proves to a Hiring Manager, Acceptance Criteria (design-verifiable), Open Questions.
+- **`proposal.md`**: Problem, Goal, Target Signal, Constraints Measured Up Front, Tech Stack, Core Features, Scope Boundary, Why This Differentiates..., Timeline, Acceptance Criteria, Risks.
+- **`design.md`**: Architecture (ASCII diagram), Package layout, Data model or the equivalent core model, Provider seams, Validation and Provenance, Worker Protocol, Persistence, Trade-offs Considered, What This Proves, Acceptance Criteria (design-verifiable), Open Questions.
 - **`tasks.md`**: Phase 1..N, each item a checkbox tagged `[G]` gate test, `[E]` eval, or `[M]` manual verification, ending with a Definition of Done.
 
-Sections present in all eleven existing specs are required: Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Trade-offs. The validator refuses to emit a file missing one.
+The six sections shared by every existing spec are required: Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Trade-offs. The validator refuses to emit a file missing one.
 
 ## Scope Boundary
 

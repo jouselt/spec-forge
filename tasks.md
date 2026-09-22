@@ -43,7 +43,7 @@ Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic co
 ## Phase 4: Mapping and template assembly
 
 - [ ] `[G]` `core/mapping.ts`: checked-in `MAP: Record<AnswerId, { proposal: string[]; design: string[]; tasks: string[] }>` derived from the eleven existing specs in `portfolio-projects`; test every entry keys a real `AnswerId` and every target is a real section name
-- [ ] `[G]` Test the six sections present in all eleven existing specs (Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Trade-offs) are all reachable from at least one mapped answer
+- [ ] `[G]` Test the six sections shared by every existing spec (Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Trade-offs) are all reachable from at least one mapped answer
 - [ ] `[G]` `core/provenance.ts`: `Origin` union with `answer`, `template`, `model`, `imported`, `edited`, `missing`; `Block` and `ReviewState`; test the union compiles and a narrowing helper classifies all six kinds
 - [ ] `[G]` `templates/proposal.tpl.ts`, `design.tpl.ts`, `tasks.tpl.ts`: each section has 2 to 4 frames chosen by answer shape; test every section has at least 2 frames and every frame's placeholders resolve against a complete answer set
 - [ ] `[G]` `assembly.ts`: `assemble(answers): GeneratedDoc[]` producing blocks with provenance; test that no block has `origin.kind === 'model'` in a template run and that three runs on the same answers produce byte-identical markdown
@@ -120,7 +120,7 @@ Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic co
 - [ ] `[G]` Self-regeneration test: run `assemble()` on that fixture and assert every required heading appears in each of the three outputs
 - [ ] `[G]` Assert the regenerated `tasks.md` item count falls in 40 to 90 and every item carries a tag
 - [ ] `[G]` CI job running the self-regeneration test on every PR; the build fails if the tool cannot write its own spec without a model
-- [ ] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the recruiter demo script in 6 steps
+- [ ] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the demo script in 6 steps
 - [ ] `[G]` README states that the model is optional and that the template path is the default, and names the measured context budget that decides whether shaping runs
 - [ ] `[G]` Source scan test: no API key, no `fetch` to a non-CDN host, and no GitHub API reference anywhere outside the model CDN allowlist
 - [ ] `[M]` Deploy to GitHub Pages at `jouselt.github.io/spec-forge`; complete a full interview in the deployed build with no model and download the bundle

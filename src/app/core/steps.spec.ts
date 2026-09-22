@@ -28,6 +28,29 @@ describe('Base Steps', () => {
     expect(errors).toEqual([]);
   });
 
+  it('step 1 help should state the shape and the reader, with no outside audience', () => {
+    const step1 = BASE_STEPS.find(q => q.id === 'q.idea');
+
+    expect(step1?.help).toBe(
+      'One paragraph. State what it is and who it is for, plainly enough that someone who has never seen it gets it on a first read.',
+    );
+  });
+
+  it('should name no reader outside the project in any prompt or help line', () => {
+    const outsideAudience = /\b(recruiter|recruiting|hiring manager|interviewer)\b/i;
+
+    for (const step of BASE_STEPS) {
+      expect(outsideAudience.test(step.prompt)).toBe(
+        false,
+        `Prompt for ${step.id} describes an outside audience`,
+      );
+      expect(outsideAudience.test(step.help ?? '')).toBe(
+        false,
+        `Help for ${step.id} describes an outside audience`,
+      );
+    }
+  });
+
   it('step 5 validation should reject "it works"', () => {
     const step5 = BASE_STEPS.find(q => q.id === 'q.proof');
     expect(step5).toBeTruthy();
