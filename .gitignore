@@ -52,5 +52,8 @@ Thumbs.db
 
 # Personal files and local planning. Nothing personal belongs in a public repo,
 # so this is also a safety net: one `git add -A` must not publish either of these.
+# The session file is a one-line Copilot resume handle; it was named resume.md
+# until the docs truth pass, which invited a reader to file it as CV content.
 resume.md
+copilot-session.txt
 odd/
