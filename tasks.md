@@ -1,41 +1,45 @@
 # 12: spec-forge: Tasks
 
-Angular 20.3 standalone, TypeScript strict, no backend, no API key. Every task ships with its tests in the same commit. Gate tests are deterministic and run in under 2s. Evals call a browser model and are slower.
+Angular 20.3 standalone, TypeScript strict, no backend, no API key. Every task ships with its tests in the same commit. Gate tests are deterministic and local. Evals call a browser model and are slower.
 
 Legend: `[G]` gate test, `[E]` eval, `[M]` manual verification.
 
-Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic core imports nothing from Angular, IndexedDB, or WebLLM. The model path is optional; the template path must work with no model and is tested first.
+Boxes are ticked where the code exists. The committed suite is `npm test`, which runs the whole Karma suite with coverage and takes about 8s wall including the build and the browser launch; a separate under-2s gate command does not exist yet.
+
+Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. The deterministic core imports nothing from Angular, IndexedDB, or WebLLM. The model path is optional; the template path must work with no model and is tested first.
 
 ---
 
 ## Phase 1: Shell and scaffold
 
-- [ ] `[G]` `ng new spec-forge --standalone --style=scss --routing=false`; assert `@angular/core` resolves to `20.3.x`; set `"strict": true` and `"strictTemplates": true` in `tsconfig.json`; `npm run build` succeeds
-- [ ] `[G]` Directory layout under `src/app/`: `core/`, `templates/`, `model/`, `state/`, `persistence/`, `ui/`; test that no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (source scan, fails the build)
-- [ ] `[G]` `AppShellComponent` with a header, a step rail on the left, and a content region; test it renders the header and an empty step rail
-- [ ] `[G]` `npm run typecheck` (`tsc --noEmit`) and `npm run lint` scripts wired; pre-commit hook and GitHub Actions workflow run `npm ci && npm run typecheck && npm test && npm run build`
-- [ ] `[M]` `npm test` (gate suite) completes in under 2s on a clean checkout
+- [x] `[G]` `ng new spec-forge --standalone --style=scss --routing=false`; assert `@angular/core` resolves to `20.3.x`; set `"strict": true` and `"strictTemplates": true` in `tsconfig.json`; `npm run build` succeeds
+- [x] `[G]` Directory layout under `src/app/`: `core/`, `templates/`, `model/`, `state/`, `persistence/`, `ui/`
+- [ ] `[G]` Source scan test: no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (fails the build). No such scan exists yet
+- [x] `[G]` `AppComponent` (selector `app-root`) with a header, a collapsible step rail on the left, a content region, and the footer stepper; tests cover the header, the populated rail, the rail toggle and the footer
+- [x] `[G]` `npm run typecheck` (`tsc --noEmit`) wired, and a GitHub Actions workflow running `npm ci && npm run typecheck && npm test && npm run build`
+- [ ] `[G]` `npm run lint` wired into a pre-commit hook and into CI. The script does not exist, eslint is not installed, and `.eslintrc.json` also names `@typescript-eslint/parser` and a `@typescript-eslint` rule that are not dependencies
+- [ ] `[M]` A gate command that completes in under 2s on a clean checkout. `npm test` runs the whole Karma suite with coverage and takes about 8s wall
 
 ## Phase 2: Question graph and triggers
 
-- [ ] `[G]` `core/question-graph.ts`: types `Answer`, `AnswerId`, `Question`, `TriggerTrace`, `Trigger`; test the module compiles under strict with no `any`
-- [ ] `[G]` Nine base step definitions in `steps.ts` with `id`, `step`, `prompt`, `kind`, `required`; test the count is 9 and every `required` flag is true
-- [ ] `[G]` `core/triggers.ts`: pure `evaluateTriggers(answers: Answer[]): { questions: Question[]; traces: TriggerTrace[] }`; test determinism by running 100 times on one fixture and asserting byte-identical output
-- [ ] `[G]` Checked-in trigger table with at least 10 triggers (`local_model`, `corpus`, `vector_db`, `realtime`, `payments`, `auth`, `browser_ai`, `nixos_deploy`, `angular`, `nestjs`); test every trigger has `patterns.length > 0`, `questions.length > 0`, and `maxQuestions <= 3`
-- [ ] `[G]` Test the `local_model` trigger: "an Angular app using a local Ollama model and pgvector" fires exactly `local_model`, `vector_db`, `angular` and yields at most 7 follow-ups
-- [ ] `[G]` Test retraction: removing "Ollama" from step 1 removes the three `local_model` questions and leaves the other two triggers intact
-- [ ] `[G]` Test the global cap: an answer matching 6 triggers yields at most 12 follow-ups, and no single trigger exceeds its `maxQuestions`
-- [ ] `[G]` `TriggerTrace` records `triggerId`, `becauseAnswerId`, `matchedPhrase`, `matchedAt`; test a fixture trace carries the exact matched phrase, not the whole answer
-- [ ] `[G]` Step 5 `validate()`: rejects answers under 12 characters and answers matching `/\b(works|good|fast|better|success|done)\b/i` as the entire answer; accepts "5 unanswerable questions return an abstain, 5 of 5"; test 6 rejections and 4 acceptances
-- [ ] `[G]` `normalize(text)`: lowercase, collapse whitespace, strip punctuation for matching; test 8 inputs; test adaptive questions sort after the step that triggered them, using a fixture firing at step 1 and step 7
+- [x] `[G]` `core/question-graph.ts`: types `Answer`, `AnswerId`, `Question`, `TriggerTrace`, `Trigger`; test the module compiles under strict with no `any`
+- [x] `[G]` Nine base step definitions in `steps.ts` with `id`, `step`, `prompt`, `kind`, `required`; test the count is 9 and every `required` flag is true
+- [x] `[G]` `core/triggers.ts`: pure `evaluateTriggers(answers: Answer[]): { questions: Question[]; traces: TriggerTrace[] }`; test determinism by running 100 times on one fixture and asserting byte-identical output
+- [x] `[G]` Checked-in trigger table with at least 10 triggers (`local_model`, `corpus`, `vector_db`, `realtime`, `payments`, `auth`, `browser_ai`, `nixos_deploy`, `angular`, `nestjs`); test every trigger has `patterns.length > 0`, `questions.length > 0`, and `maxQuestions <= 3`
+- [x] `[G]` Test the `local_model` trigger: "an Angular app using a local Ollama model and pgvector" fires exactly `local_model`, `vector_db`, `angular` and yields at most 7 follow-ups
+- [x] `[G]` Test retraction: removing "Ollama" from step 1 removes the three `local_model` questions and leaves the other two triggers intact
+- [x] `[G]` Test the global cap: an answer matching 6 triggers yields at most 12 follow-ups, and no single trigger exceeds its `maxQuestions`
+- [x] `[G]` `TriggerTrace` records `triggerId`, `becauseAnswerId`, `matchedPhrase`, `matchedAt`; test a fixture trace carries the exact matched phrase, not the whole answer
+- [x] `[G]` Step 5 `validate()`: rejects answers under 12 characters and answers matching the keyword gate as the entire answer; accepts "5 of 5 unanswerable questions return an abstain"; test 6 rejections and 4 acceptances. The length branch always fires first, so the keyword gate is unreachable today
+- [x] `[G]` `normalize(text)`: lowercase, collapse whitespace, strip punctuation for matching; test 8 inputs; test adaptive questions sort after the step that triggered them, using a fixture firing at step 1 and step 7
 
 ## Phase 3: Wizard UI and autosave
 
-- [ ] `[G]` `WizardComponent`: renders one `QuestionCardComponent` per visible question for the current step, plus Next, Back, and progress "Step 4 of 11"; test progress text with a fixture step
-- [ ] `[G]` `QuestionCardComponent`: renders prompt, help text, an input by `kind` (`text`, `longtext`, `number`, `choice`, `list`, `table`), and a validation message slot; test all six kinds render
-- [ ] `[G]` `AdaptiveBadgeComponent`: renders "Asked because you mentioned *{phrase}* in step {step}"; test with a fixture `TriggerTrace` and assert the phrase appears
-- [ ] `[G]` `InterviewStore` (signals): `answers`, `triggers`, `generated`, `review`, `step`; derived `visibleQuestions` and `followUpCount`; test that adding an answer recomputes `visibleQuestions`
-- [ ] `[G]` Test the follow-up counter renders "4 of 12 follow-ups used" at exactly 4 adaptive questions
+- [x] `[G]` `AppComponent` plus `QuestionPanelComponent`: one question at a time in the panel with the full list in `StepRailComponent`, plus Back and Next and the progress line "Question {{index + 1}} of {{total}}"; tests cover the prompt, the rail states and the navigation
+- [x] `[G]` `QuestionPanelComponent`: renders prompt, help text, an input by `kind` (`text`, `longtext`, `number`, `choice`, `list`, `table`), and a validation message slot; a walk over the list asserts all six kinds render
+- [x] `[G]` The follow-up reason: `describeTrigger()` renders "Asked because you mentioned {phrase} in step {step}", or "in a follow-up question" when the answer that fired the trace was itself adaptive; the panel shows it as a paragraph, the rail shows it under the prompt with a "Follow-up" tag, and the store spec asserts the sentence from a real trace
+- [x] `[G]` `WizardStore` in `state/wizard-store.service.ts` (signals): `answers`, `questions`, `traces`, `index`; derived `total`, `currentIndex`, `current`, `answeredCount`, `currentError`, `canAdvance`, `rail`; tests assert that adding an answer recomputes the question list and that retraction prunes answers whose question disappeared
+- [x] `[G]` Test the counters that ship: the header reads "N of M answered", the panel "Question N of M", and the footer "N out of M". Tests cover 0 of 9, the growth to 12 when the `local_model` follow-ups appear, the shrink back to 9 when the keyword goes, and the moving current segment
 - [ ] `[G]` `persistence/spec-db.ts`: `idb` database `spec-forge` version 1 with stores `drafts`, `answers`, `docs`, `snapshots`, `locks`; `autosave.ts` debounces 400 ms on answer edit and writes at once on step change; test open/put/get plus 20 rapid edits producing 1 write (fakeAsync)
 - [ ] `[G]` Resume: seed a draft at step 7 with 12 answers, reload state, assert the wizard opens at step 7 with all 12 answer values; test the restore path
 - [ ] `[M]` Kill the tab at step 7, reopen, confirm nothing was lost including the adaptive badge state
@@ -43,8 +47,8 @@ Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic co
 ## Phase 4: Mapping and template assembly
 
 - [ ] `[G]` `core/mapping.ts`: checked-in `MAP: Record<AnswerId, { proposal: string[]; design: string[]; tasks: string[] }>` derived from the eleven existing specs in `portfolio-projects`; test every entry keys a real `AnswerId` and every target is a real section name
-- [ ] `[G]` Test the six sections shared by every existing spec (Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Trade-offs) are all reachable from at least one mapped answer
-- [ ] `[G]` `core/provenance.ts`: `Origin` union with `answer`, `template`, `model`, `imported`, `edited`, `missing`; `Block` and `ReviewState`; test the union compiles and a narrowing helper classifies all six kinds
+- [ ] `[G]` Test the six sections shared by every existing spec (Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Timeline) are all reachable from at least one mapped answer. The eleven existing specs use the older heading `Target Recruiter Signal`; this repository's own spec renamed it to `Target Signal`, so settle the spelling before writing the check
+- [ ] `[G]` `core/provenance.ts`: block tagging helpers. `Origin`, `Block` and `ReviewState` already exist in `core/question-graph.ts` with `narrowOrigin`, `isSourced` and `isBlockExportReady`, tested there, so this task is the tagging layer only
 - [ ] `[G]` `templates/proposal.tpl.ts`, `design.tpl.ts`, `tasks.tpl.ts`: each section has 2 to 4 frames chosen by answer shape; test every section has at least 2 frames and every frame's placeholders resolve against a complete answer set
 - [ ] `[G]` `assembly.ts`: `assemble(answers): GeneratedDoc[]` producing blocks with provenance; test that no block has `origin.kind === 'model'` in a template run and that three runs on the same answers produce byte-identical markdown
 - [ ] `[G]` Test gap handling: an answer set missing `constraints` emits `{{MISSING: ...}}` under Constraints Measured Up Front in `proposal.md` and no prose
@@ -79,7 +83,7 @@ Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic co
 - [ ] `[G]` `core/diff.ts`: line-level diff per section between the current document and a candidate; test a candidate with 1 changed section out of 12 reports exactly 1
 - [ ] `[G]` `DiffReviewComponent`: per-section accept or reject with a side-by-side or inline diff; test accepting one section and rejecting another produces the expected merged document
 - [ ] `[G]` Section locks: setting `locked = true` excludes a block from regeneration entirely; test the locked text is byte-identical after a run and the badge renders "This is your text"
-- [ ] `[G]` `importSpec(text: string)`: parses `##` sections from a pasted `proposal.md`, marks each `origin.kind = 'imported'` and `locked = true`; test against Joe's real `01` `proposal.md`, then generate and assert imported blocks are unchanged and only unmapped sections gain text
+- [ ] `[G]` `importSpec(text: string)`: parses `##` sections from a pasted `proposal.md`, marks each `origin.kind = 'imported'` and `locked = true`; test against the portfolio's real `01` `proposal.md`, then generate and assert imported blocks are unchanged and only unmapped sections gain text
 - [ ] `[G]` Restore: snapshot list with a diff preview; restoring a prior version replaces the current document; test round-trip equality on a fixture
 - [ ] `[M]` Reproduce the motivating failure: import a real spec, regenerate, and confirm no human-written sentence was reverted
 
@@ -131,11 +135,11 @@ Versions are pinned to Joe's stack: `@angular/core` 20.3.x. The deterministic co
 
 ## Definition of Done
 
-- All `[G]` tasks pass in CI on a clean checkout; `npm test` finishes in under 2s.
+- All `[G]` tasks pass in CI on a clean checkout; `npm test` passes (184 specs, about 8s wall today, with an under-2s gate command as a separate unbuilt target).
 - All `[E]` evals meet their stated thresholds, recorded with model id and date where a model was used.
 - The template path produces all three files with zero inferred blocks and export enabled, with no model loaded.
 - The export gate blocks on at least one unreviewed inferred block, on a surviving placeholder, and on a missing required section, proven by tests rather than by inspection.
-- Importing Joe's real `01` `proposal.md` and regenerating leaves every imported sentence byte-identical.
+- Importing the portfolio's real `01` `proposal.md` and regenerating leaves every imported sentence byte-identical.
 - The self-regeneration test passes in CI: `spec-forge-answers.json` rebuilds this project's three files through the template path.
 - `style-lint.ts` reports zero findings on the three specs in this repository and is enforced in CI.
 - No backend, no API key, no repo write, no GitHub token anywhere in the codebase.
