@@ -10,9 +10,9 @@ The proposal sets the priority order: **interview first, generate second, and ne
 +-------------------------------- UI (Angular 20.3, standalone, signals) -------------------------------+
 |                                                                                                     |
 |  +----------------------------+   +---------------------------+   +-------------------------------+ |
-|  | WizardComponent            |   | ReviewPanelComponent      |   | OutputTabsComponent           | |
-|  | QuestionCard per step      |   | inferred blocks, states   |   | proposal | design | tasks     | |
-|  | progress + adaptive badge  |   | jump to source answer     |   | CodeMirror 6, editable        | |
+|  | AppComponent               |   | ReviewPanelComponent      |   | OutputTabsComponent           | |
+|  | QuestionPanelComponent     |   | inferred blocks, states   |   | proposal | design | tasks     | |
+|  | prompt, help, reason, nav  |   | jump to source answer     |   | CodeMirror 6, editable        | |
 |  +----------------------------+   +---------------------------+   +-------------------------------+ |
 |                                                                                                     |
 |  +----------------------------+   +---------------------------+   +-------------------------------+ |
@@ -27,9 +27,9 @@ The proposal sets the priority order: **interview first, generate second, and ne
         |                                                       ^ streaming deltas + events
         v postMessage                                           |
 +---------------------------+   +---------------------------+   +---------------------------+
-| inference.worker.ts       |   | InterviewStore (signals)  |   | specDb (idb)              |
-| ModelProvider facade      |   | answers, triggers, meta   |   | drafts, answers,          |
-|  - WebLlmProvider         |   | derived: sections, proven |   | sections, snapshots       |
+| inference.worker.ts       |   | WizardStore (signals)     |   | specDb (idb)              |
+| ModelProvider facade      |   | answers, questions,       |   | drafts, answers,          |
+|  - WebLlmProvider         |   | derived: rail, totals     |   | sections, snapshots       |
 |  - LiteRtProvider (alt)   |   +---------------------------+   +---------------------------+
 +---------------------------+
         |
@@ -246,7 +246,7 @@ Rules, all enforced in `triggers.ts` and all tested:
 | idea | Goal, Core Features | Architecture header | Phase 1 title |
 | problem, who_has_it, workaround | Problem | | |
 | goal, non_goals | Goal, Scope Boundary | | |
-| proof_metric | Target Signal, Acceptance Criteria | Acceptance criteria (design-verifiable) | gate criteria in each phase |
+| proof_metric | Target Recruiter Signal, Acceptance Criteria | Acceptance criteria (design-verifiable) | gate criteria in each phase |
 | constraints | Constraints Measured Up Front | the constraint section named by the answer | |
 | stack | Tech Stack | Package layout, Provider seams | |
 | scope_out | Scope Boundary | Trade-offs | |
