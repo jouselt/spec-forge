@@ -25,7 +25,7 @@ export interface TriggerTrace {
 
 export interface Question {
   id: string; // unique within the graph
-  step: number; // which step of the wizard (1-11)
+  step: number; // base questions are 1-9; a follow-up carries a fractional step just after the one that fired it
   prompt: string; // what to ask the user
   help?: string; // one line on what a good answer looks like
   kind: Answer['kind'];
