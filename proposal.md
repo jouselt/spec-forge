@@ -76,13 +76,13 @@ Measured values are marked. Budgets are marked as budgets, and the app computes 
 
 The generated files match the section structure measured across the eleven existing specs in `portfolio-projects`, which is the corpus this was derived from:
 
-- **`proposal.md`**: Problem, Goal, Target Recruiter Signal, Constraints Measured Up Front, Tech Stack, Core Features, Scope Boundary, Why It Is Built This Way, Timeline, Acceptance Criteria, Risks.
+- **`proposal.md`**: Problem, Goal, Target Signal, Constraints Measured Up Front, Tech Stack, Core Features, Scope Boundary, Why It Is Built This Way, Timeline, Acceptance Criteria, Risks.
 - **`design.md`**: Architecture (ASCII diagram), Package layout, Data model or the equivalent core model, Provider seams, Validation and Provenance, Worker Protocol, Persistence, Trade-offs Considered, What This Proves, Acceptance Criteria (design-verifiable), Open Questions.
 - **`tasks.md`**: Phase 1..N, each item a checkbox tagged `[G]` gate test, `[E]` eval, or `[M]` manual verification, ending with a Definition of Done.
 
-The six sections shared by every existing spec are required: Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Timeline. The validator refuses to emit a file missing one.
+The six sections shared by every existing spec are required: Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Timeline. The validator refuses to emit a file missing one.
 
-Note the heading drift: the eleven existing specs carry the older heading `Target Recruiter Signal`, while this repository's own spec renamed it to `Target Signal`, and the differentiator section was renamed to `Why It Is Built This Way`. Which spelling the validator enforces is an open decision, and it has to be settled before the validator is written: one that matches a single spelling literally would reject every file already in the corpus. The eleven sibling specs are out of scope for this change and were not edited.
+Note the heading drift: the eleven existing specs carry the older heading `Target Recruiter Signal`, while this repository's own spec uses `Target Signal`, and the differentiator section was renamed to `Why It Is Built This Way`. Settled: this app emits `Target Signal` and never assumes a recruiter or a hiring manager as its reader, because it writes specs for arbitrary projects. Import and validation accept both spellings, plus the qualified `Tech Stack (Angular/NestJS)` heading the corpus uses, so a file from either side reads back. The eleven sibling specs are out of scope for this change and were not edited.
 
 ## Scope Boundary
 

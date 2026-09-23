@@ -46,14 +46,14 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 4: Mapping and template assembly
 
-- [ ] `[G]` `core/mapping.ts`: checked-in `MAP: Record<AnswerId, { proposal: string[]; design: string[]; tasks: string[] }>` derived from the eleven existing specs in `portfolio-projects`; test every entry keys a real `AnswerId` and every target is a real section name
-- [ ] `[G]` Test the six sections shared by every existing spec (Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Timeline) are all reachable from at least one mapped answer. The eleven existing specs use the older heading `Target Recruiter Signal`; this repository's own spec renamed it to `Target Signal`, so settle the spelling before writing the check
-- [ ] `[G]` `core/provenance.ts`: block tagging helpers. `Origin`, `Block` and `ReviewState` already exist in `core/question-graph.ts` with `narrowOrigin`, `isSourced` and `isBlockExportReady`, tested there, so this task is the tagging layer only
-- [ ] `[G]` `templates/proposal.tpl.ts`, `design.tpl.ts`, `tasks.tpl.ts`: each section has 2 to 4 frames chosen by answer shape; test every section has at least 2 frames and every frame's placeholders resolve against a complete answer set
-- [ ] `[G]` `assembly.ts`: `assemble(answers): GeneratedDoc[]` producing blocks with provenance; test that no block has `origin.kind === 'model'` in a template run and that three runs on the same answers produce byte-identical markdown
-- [ ] `[G]` Test gap handling: an answer set missing `constraints` emits `{{MISSING: ...}}` under Constraints Measured Up Front in `proposal.md` and no prose
-- [ ] `[G]` `tasks.tpl.ts` tag classifier: `G` for unit-testable function or fixture, `E` for model call, threshold, or sample, `M` otherwise; test 15 items and assert at least 12 match the expected tag
-- [ ] `[E]` Readability eval: assemble 5 real answer sets; a human rates each generated `proposal.md` 1 to 5 on "reads like a person wrote it"; record the mean and require at least 3.0 for the template path to ship as the default
+- [x] `[G]` `core/mapping.ts`: checked-in `MAP: Record<AnswerId, { proposal: string[]; design: string[]; tasks: string[] }>` derived from the eleven existing specs in `portfolio-projects`; test every entry keys a real `AnswerId` and every target is a real section name
+- [x] `[G]` Test the six sections shared by every existing spec (Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Timeline) are all reachable from at least one mapped answer. Settled: this app emits `Target Signal`; the eleven sibling specs keep `Target Recruiter Signal`; `canonicalSectionName` accepts either, plus the qualified `Tech Stack (Angular/NestJS)` heading the corpus uses
+- [x] `[G]` `core/provenance.ts`: block tagging helpers. `Origin`, `Block` and `ReviewState` already live in `core/question-graph.ts` with `narrowOrigin`, `isSourced` and `isBlockExportReady`, tested there, so this is the tagging layer only
+- [x] `[G]` `templates/proposal.tpl.ts`, `design.tpl.ts`, `tasks.tpl.ts`: each section has 2 to 4 frames chosen by answer shape; test every section has at least 2 frames and every frame's placeholders resolve against a complete answer set
+- [x] `[G]` `templates/assembly.ts`: `assemble(answers): GeneratedDoc[]` producing blocks with provenance; test that no block has `origin.kind === 'model'` in a template run and that three runs on the same answers produce byte-identical markdown
+- [x] `[G]` Test gap handling: an answer set missing `constraints` emits `{{MISSING: ...}}` under Constraints Measured Up Front in `proposal.md` and no prose
+- [x] `[G]` `tasks.tpl.ts` tag classifier: `G` for unit-testable function or fixture, `E` for model call, threshold, or sample, `M` otherwise; test 15 real items from the sibling specs and assert at least 12 match the expected tag (measured: 13 of 15)
+- [ ] `[E]` Readability eval: assemble 5 real answer sets; a human rates each generated `proposal.md` 1 to 5 on "reads like a person wrote it"; record the mean and require at least 3.0 for the template path to ship as the default. Harness and fixtures are in `evals/readability/` and run; the rating is pending a person, so the box stays unticked
 
 ## Phase 5: Output editor, provenance panel, review
 

@@ -45,7 +45,7 @@ The proposal sets the priority order: **interview first, generate second, and ne
 
 The main thread owns the interview and the prose. The worker owns the model. The pure core owns correctness. Nothing in the pure core imports Angular, IndexedDB, or WebLLM.
 
-The diagram names the planned components. What exists today: `AppComponent` plus `QuestionPanelComponent` with one control per question kind, `StepRailComponent`, and `StepStepperComponent` (the "N out of M" footer) under `src/app/ui/`, and `WizardStore` in `src/app/state/wizard-store.service.ts`. The review panel, output tabs, provenance panel, diff review, model bar and export gate are not built.
+The diagram names the planned components. What exists today: `AppComponent` plus `QuestionPanelComponent` with one control per question kind, `StepRailComponent`, and `StepStepperComponent` (the "N out of M" footer) under `src/app/ui/`; `WizardStore` in `src/app/state/wizard-store.service.ts`; and the whole no-model generation path under `src/app/core/` and `src/app/templates/` (`mapping.ts`, `provenance.ts`, `frame.ts`, the three templates and `assembly.ts`). The review panel, output tabs, provenance panel, diff review, model bar and export gate are not built.
 
 ## Package layout
 
@@ -59,21 +59,22 @@ src/app/
                            isBlockExportReady                                     done
     steps.ts               the nine base questions and validateBaseSteps          done
     triggers.ts            the trigger table, normalize(), evaluateTriggers()      done
-    mapping.ts             answer id -> (file, section) mapping table           planned
-    answers.ts             AnswerSet, answer ids, normalization                 planned
-    provenance.ts          block tagging helpers                                planned
-                           (Origin, Block and ReviewState already live in
-                           question-graph.ts; only the tagging helpers move)
+    mapping.ts             answer id -> (file, section) mapping table           done
+    answers.ts             AnswerSet, answer ids, normalization              planned
+    provenance.ts          block tagging helpers                                done
+                           (Origin, Block and ReviewState live in
+                           question-graph.ts; this is the tagging layer)
     validator.ts           required sections, acceptance-criteria shape, style   planned
     gate.ts                export gate evaluation                              planned
     diff.ts                line-level diff and section-level apply             planned
     style-lint.ts          em dash + banned word check                         planned
     export.ts              blob building, bundle concatenation, zip            planned
   templates/
-    proposal.tpl.ts        section frames for proposal.md                      planned
-    design.tpl.ts          section frames for design.md                        planned
-    tasks.tpl.ts           phase and item frames for tasks.md                  planned
-    assembly.ts            renders an AnswerSet into Blocks with provenance     planned
+    frame.ts               frame vocabulary, tokens, shape patterns            done
+    proposal.tpl.ts        section frames for proposal.md                      done
+    design.tpl.ts          section frames for design.md                        done
+    tasks.tpl.ts           phase and item frames, tag classifier               done
+    assembly.ts            renders an AnswerSet into Blocks with provenance     done
   model/
     model-provider.ts      interface, same seam as project 11                  planned
     prompts/               shaping prompts per file, marker + placeholder protocol  planned
@@ -188,7 +189,7 @@ Nine base steps. The order matters: constraints before stack, proof before featu
 | 8 | What is explicitly out of scope? | list | yes | |
 | 9 | Biggest risk, and what you would build first instead | longtext | yes | Feeds Risks and trade-offs |
 
-Nine steps is the whole interview. `steps.ts` defines exactly those nine, `validateBaseSteps()` returns an error if the count is not nine, and the shipped footer reads "1 out of 9". **Risks and Trade-offs** and **Acceptance Criteria and Timeline** are not steps: neither exists in the code, and no task in `tasks.md` asks for them as interview steps. Acceptance criteria are produced from the answers by the assembly path, which is not built. If those two rows are still wanted as steps they are planned work, and the total is 9 today and would be 11 only once both ship.
+Nine steps is the whole interview. `steps.ts` defines exactly those nine, `validateBaseSteps()` returns an error if the count is not nine, and the shipped footer reads "1 out of 9". **Risks and Trade-offs** and **Acceptance Criteria and Timeline** are not steps: neither exists in the code, and no task in `tasks.md` asks for them as interview steps. Acceptance criteria are produced from the answers by `templates/assembly.ts`: one item per mapped answer entry under **Acceptance Criteria**, and the `q.risk` answer carries **Timeline**, which says in the file that no dates are collected. If those two rows are still wanted as steps they are planned work, and the total is 9 today and would be 11 only once both ship.
 
 **Triggers** are a checked-in table, not model output. A trigger is a phrase match plus a question set:
 
@@ -239,45 +240,52 @@ Rules, all enforced in `triggers.ts` and all tested:
 
 ## Answer-to-section mapping
 
-`mapping.ts` is a checked-in table, derived by reading the eleven existing specs in `portfolio-projects`. No model is involved in deciding where an answer goes.
+`mapping.ts` is a checked-in table, derived by reading the eleven existing specs in `portfolio-projects`. No model is involved in deciding where an answer goes. Rows are keyed by the real question ids from `steps.ts` and `triggers.ts`, and a test asserts both directions: every key is a real answer id and every id in the graph has a row, so no answer is dropped without a word.
 
 | Answer | proposal.md | design.md | tasks.md |
 | --- | --- | --- | --- |
-| idea | Goal, Core Features | Architecture header | Phase 1 title |
-| problem, who_has_it, workaround | Problem | | |
-| goal, non_goals | Goal, Scope Boundary | | |
-| proof_metric | Target Recruiter Signal, Acceptance Criteria | Acceptance criteria (design-verifiable) | gate criteria in each phase |
-| constraints | Constraints Measured Up Front | the constraint section named by the answer | |
-| stack | Tech Stack | Package layout, Provider seams | |
-| scope_out | Scope Boundary | Trade-offs | |
-| risk, alt_build | Risks | Trade-offs Considered | |
-| acceptance | Acceptance Criteria | Acceptance criteria (design-verifiable) | `[G]` items |
-| timeline | Timeline | | Phase grouping |
-| a.ctx_window, a.vram_gb, a.wasm_fallback | Constraints Measured Up Front | ModelProvider, Capability handling | `[M]` verification items |
+| `q.idea` | Goal, Core Features | Architecture | Phase 1, Phase 2 |
+| `q.problem`, `q.workaround` | Problem | Architecture | Phase 2 |
+| `q.goal` | Goal, Core Features, Scope Boundary | What This Proves, Trade-offs Considered | Phase 2 |
+| `q.proof` | Target Signal, Acceptance Criteria | Validation and Provenance, What This Proves, Acceptance criteria (design-verifiable) | Phase 4, Definition of Done |
+| `q.constraints` | Constraints Measured Up Front, Acceptance Criteria | Data model, Validation and Provenance, Acceptance criteria (design-verifiable) | Phase 3, Phase 4, Definition of Done |
+| `q.stack` | Tech Stack | Architecture, Package layout, Data model, Provider seams, Persistence | Phase 1, Phase 5 |
+| `q.scope_out` | Scope Boundary | Trade-offs Considered | Phase 2 |
+| `q.risk` | Timeline, Risks | Trade-offs Considered, Open Questions | Phase 5 |
+| `a.ctx_window`, `a.vram_gb`, `a.wasm_fallback`, `a.model_size`, `a.gpu_requirement` | Constraints Measured Up Front | Data model, Provider seams, Capability handling | Phase 3 |
+| every other `a.*` follow-up | Constraints Measured Up Front | Data model, or Package layout for the framework and deployment follow-ups | Phase 3 |
 
-A section with no mapped answer is not filled in by the model. It is emitted as a heading with `{{MISSING: which question would answer this}}` underneath, and it shows in the review panel as a gap. This is the structural version of "do not invent": absent input produces a visible hole, not a plausible paragraph.
+`Timeline` and `Acceptance Criteria` are the two rows with no dedicated step, and the design says so above. `Timeline` is reached from `q.risk`, the answer that names what to build first, and its frames say in the file that no dates are collected rather than inventing weeks. `Acceptance Criteria` is assembled from `q.proof` and the measured constraints.
+
+The section names are the app's own: `Problem`, `Goal`, `Target Signal`, `Tech Stack`, `Acceptance Criteria`, `Timeline`, plus the sections a spec needs around them. The eleven sibling specs spell one of those `Target Recruiter Signal` and keep it, because they present Joe's own work to a hiring reader; this app generates specs for arbitrary projects, so its default does not assume that audience. `canonicalSectionName` accepts either spelling, plus the qualified `Tech Stack (Angular/NestJS)` heading eight of the eleven specs use, which is what an import of an existing spec goes through. The sibling specs are not edited.
+
+A section with no mapped answer is not filled in by the model. A required section is emitted as a heading with `{{MISSING: which question would answer this}}` underneath; an optional section with nothing behind it is left out of the file. Gaps show in the review panel, and the export gate counts them. This is the structural version of "do not invent": absent input produces a visible hole, not a plausible paragraph.
 
 ## Templates (the no-model path)
 
 Template assembly is the default and must be good enough to ship on its own. Each section has two to four frames, chosen by the shape of the mapped answers, so output does not read like a mail merge.
 
 ```
-Goal:
-  frame A (has metric):  "Build **{name}**: {idea_sentence} It {goal_sentence} and is judged by {proof_metric}."
-  frame B (no metric):   "Build **{name}**: {idea_sentence} It {goal_sentence}."
-  frame C (has non-goals): "... It does not {non_goals[0]}, and it does not {non_goals[1]}."
+Goal (proposal), three frames, first match wins:
+  goal.measured    has idea, goal and proof:
+                   "{idea}\n\n{goal}\n\nThe proof is named up front: {proof}"
+  goal.unmeasured  has idea and goal:   "{idea}\n\n{goal}"
+  goal.without_goal has idea:           "{idea}"
 
-Acceptance criteria item (proposal):
-  "- [ ] {verb_phrase} {object} {measurable_or_observable}."
+Acceptance criteria item (proposal), a line frame per answer entry:
+  criteria.proof       "- [ ] {proof}"
+  criteria.constraint  "- [ ] {item_label}: {item_value}"   each = constraint rows
 
-tasks.md item:
+tasks.md item, one per phase, tagged:
   "- [ ] `[{tag}]` {imperative} {object}; {verification_clause}"
   tag = 'G' when the item names a unit-testable function or a fixture
         'E' when it names a model call, a threshold, or a sample
         'M' otherwise
 ```
 
-`verb_phrase` is derived from the answer's first sentence with the leading filler stripped by a checked-in stopword list. The tag classifier is keyword-based and its output is always user-editable, which is why a wrong guess costs one click rather than a broken file.
+Frame kinds: a `prose` frame is one of the alternatives a section picks between, so a section renders one paragraph; `bullet` and `check` frames accumulate, and a frame with an `each` list renders one line per entry of that answer (one task item per stack choice, one acceptance criterion per measured constraint). Tokens are filled from the answers. An unknown token throws during assembly rather than leaking braces into a file, and a test renders every frame against a complete answer set to prove the tokens resolve.
+
+The wording is the user's. A frame carries the answer text verbatim and adds the sentence that says what it is doing there; it does not paraphrase or summarize, which is why the template path reads like a person wrote it: a person did. The one exception is the short project name, built from the first clause of the idea answer with a checked-in stopword list (`FILLER_PREFIXES`, `NAME_STOPWORDS` in `assembly.ts`); it is composed copy, so its dashes are normalized. The tag classifier in `tasks.tpl.ts` is keyword-based and its output is always user-editable in the output editor, which is why a wrong guess costs one click rather than a broken file. It matches 13 of the 15 real items from the sibling specs that its test feeds it.
 
 The self-regeneration test exists because of this path: `spec-forge-answers.json` holds the answers that describe spec-forge itself, and CI asserts the template path reproduces this repository's three files' structure. The tool must be able to write its own spec without a model.
 
@@ -389,7 +397,7 @@ The fourth guard is the direct answer to the incident that motivated the project
 
 **Structure per file.**
 
-- `proposal.md` has all of: Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Timeline (the six shared by the existing spec corpus), plus Risks. The corpus spells one of them `Target Recruiter Signal`; this repository's own spec renamed it to `Target Signal`, so the validator has to accept a spelling before it can run against the corpus at all.
+- `proposal.md` has all of: Problem, Goal, `Target Signal`, Tech Stack, Acceptance Criteria, Timeline (the six shared by the existing spec corpus), plus Risks. The corpus spells one of them `Target Recruiter Signal`. The app emits `Target Signal` and `canonicalSectionName` accepts either spelling, plus the qualified `Tech Stack (Angular/NestJS)` heading, so the validator can run against the corpus and against a file this app wrote.
 - `design.md` has Architecture, Package layout, Provider seams, Validation, Persistence, Trade-offs, What This Proves, Acceptance Criteria, Open Questions.
 - `tasks.md` has at least 3 phases, every item is a checkbox, every item carries one of `[G]` `[E]` `[M]`, and it ends with a Definition of Done.
 
