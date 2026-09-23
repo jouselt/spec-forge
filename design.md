@@ -45,47 +45,60 @@ The proposal sets the priority order: **interview first, generate second, and ne
 
 The main thread owns the interview and the prose. The worker owns the model. The pure core owns correctness. Nothing in the pure core imports Angular, IndexedDB, or WebLLM.
 
+The diagram names the planned components. What exists today: `AppComponent` plus `QuestionPanelComponent` with one control per question kind, `StepRailComponent`, and `StepStepperComponent` (the "N out of M" footer) under `src/app/ui/`, and `WizardStore` in `src/app/state/wizard-store.service.ts`. The review panel, output tabs, provenance panel, diff review, model bar and export gate are not built.
+
 ## Package layout
+
+The layout is the plan. The lines marked `done` exist today; everything else is unbuilt.
 
 ```
 src/app/
   core/
-    question-graph.ts      base and adaptive question definitions, types
-    triggers.ts            pure trigger evaluation over the answer set
-    mapping.ts             answer id -> (file, section) mapping table
-    answers.ts             AnswerSet, answer ids, normalization
-    provenance.ts          Origin kinds, ProvenanceRecord, block tagging
-    validator.ts           required sections, acceptance-criteria shape, style
-    gate.ts                export gate evaluation
-    diff.ts                line-level diff and section-level apply
-    style-lint.ts          em dash + banned word check
-    export.ts              blob building, bundle concatenation, zip
+    question-graph.ts      core types only: Answer, Question, Trigger, TriggerTrace,
+                           Origin, Block, ReviewState, plus narrowOrigin, isSourced,
+                           isBlockExportReady                                     done
+    steps.ts               the nine base questions and validateBaseSteps          done
+    triggers.ts            the trigger table, normalize(), evaluateTriggers()      done
+    mapping.ts             answer id -> (file, section) mapping table           planned
+    answers.ts             AnswerSet, answer ids, normalization                 planned
+    provenance.ts          block tagging helpers                                planned
+                           (Origin, Block and ReviewState already live in
+                           question-graph.ts; only the tagging helpers move)
+    validator.ts           required sections, acceptance-criteria shape, style   planned
+    gate.ts                export gate evaluation                              planned
+    diff.ts                line-level diff and section-level apply             planned
+    style-lint.ts          em dash + banned word check                         planned
+    export.ts              blob building, bundle concatenation, zip            planned
   templates/
-    proposal.tpl.ts        section frames for proposal.md
-    design.tpl.ts          section frames for design.md
-    tasks.tpl.ts           phase and item frames for tasks.md
-    assembly.ts            renders an AnswerSet into Blocks with provenance
+    proposal.tpl.ts        section frames for proposal.md                      planned
+    design.tpl.ts          section frames for design.md                        planned
+    tasks.tpl.ts           phase and item frames for tasks.md                  planned
+    assembly.ts            renders an AnswerSet into Blocks with provenance     planned
   model/
-    model-provider.ts      interface, same seam as project 11
-    prompts/               shaping prompts per file, marker + placeholder protocol
-    markers.ts             [[answer:N]] parsing and coverage scoring
-    placeholders.ts        {{MISSING: ...}} parsing and promotion
-    inference-client.ts    main-thread facade over the worker
-    inference.worker.ts    WebWorkerMLCEngineHandler
+    model-provider.ts      interface, same seam as project 11                  planned
+    prompts/               shaping prompts per file, marker + placeholder protocol  planned
+    markers.ts             [[answer:N]] parsing and coverage scoring           planned
+    placeholders.ts        {{MISSING: ...}} parsing and promotion              planned
+    inference-client.ts    main-thread facade over the worker                 planned
+    inference.worker.ts    WebWorkerMLCEngineHandler                           planned
   state/
-    interview-store.ts     signals: answers, triggers, meta, generated, review
-    review-store.ts        per-block review state
-    snapshot-store.ts      versioned generated docs, locks, restore
+    wizard-store.service.ts  signals: answers, questions, traces, index; rail and totals  done
+    trigger-reason.ts        the follow-up reason sentence                     done
+    review-store.ts        per-block review state                             planned
+    snapshot-store.ts      versioned generated docs, locks, restore            planned
   persistence/
-    spec-db.ts             idb schema and migrations
-    autosave.ts            debounced writer
+    spec-db.ts             idb schema and migrations                           planned
+    autosave.ts            debounced writer                                    planned
   ui/
-    wizard/  question-card/  adaptive-badge/  review-panel/
-    output-tabs/  provenance-panel/  diff-review/  model-bar/
-    export-gate/  style-lint-panel/
+    question-panel/        prompt, help, reason, control, validation, nav       done
+    step-rail/             every question in order, with state and reason       done
+    step-stepper/          segment row plus the "N out of M" footer             done
+    controls/              text, longtext, number, choice, list, table          done
+    review-panel/  output-tabs/  provenance-panel/  diff-review/
+    model-bar/  export-gate/  style-lint-panel/                              planned
 ```
 
-No NgRx. Three signals collections in one store cover it; a store library would add indirection without solving anything this app has.
+No NgRx. One store with a few signals covers it; a store library would add indirection without solving anything this app has.
 
 ## Data model
 
@@ -175,7 +188,7 @@ Nine base steps. The order matters: constraints before stack, proof before featu
 | 8 | What is explicitly out of scope? | list | yes | |
 | 9 | Biggest risk, and what you would build first instead | longtext | yes | Feeds Risks and trade-offs |
 
-Two more steps exist and are always shown: **Risks and Trade-offs** (auto-seeded from step 9 plus any constraint marked as a limit) and **Acceptance Criteria and Timeline** (a repeatable list with a numeric-or-observable shape check per item). The nine rows above are the ones that drive the adaptive engine.
+Nine steps is the whole interview. `steps.ts` defines exactly those nine, `validateBaseSteps()` returns an error if the count is not nine, and the shipped footer reads "1 out of 9". **Risks and Trade-offs** and **Acceptance Criteria and Timeline** are not steps: neither exists in the code, and no task in `tasks.md` asks for them as interview steps. Acceptance criteria are produced from the answers by the assembly path, which is not built. If those two rows are still wanted as steps they are planned work, and the total is 9 today and would be 11 only once both ship.
 
 **Triggers** are a checked-in table, not model output. A trigger is a phrase match plus a question set:
 
@@ -185,43 +198,44 @@ export interface Trigger {
   patterns: RegExp[];             // applied to normalized answer text
   questions: Question[];
   maxQuestions: number;           // per-trigger cap
-  reasonTemplate: string;         // 'You mentioned {phrase} in step {step}'
+  reasonTemplate: string;         // 'Asked because you mentioned {phrase} in step {step}'
 }
-
-const TRIGGERS: Trigger[] = [
-  {
-    id: 'local_model',
-    patterns: [/\b(ollama|local model|local llm|self-hosted model|llama|mistral)\b/i],
-    maxQuestions: 3,
-    reasonTemplate: 'You mentioned {phrase}, so the spec needs the model constraints.',
-    questions: [
-      { id: 'a.ctx_window', prompt: 'What is the model context window, in tokens?', kind: 'number' },
-      { id: 'a.vram',       prompt: 'How much VRAM or memory does the model need?', kind: 'text' },
-      { id: 'a.wasm_ok',    prompt: 'If the GPU is unavailable, is a slow CPU fallback acceptable?',
-        kind: 'choice' },
-    ],
-  },
-  { id: 'corpus',     patterns: [/\b(corpus|documents|transcripts|ingest|embeddings?)\b/i], maxQuestions: 3 },
-  { id: 'vector_db',  patterns: [/\b(pgvector|vector|hnsw|embedding dim)\b/i], maxQuestions: 2 },
-  { id: 'realtime',   patterns: [/\b(realtime|websocket|streaming|sse|collab)\b/i], maxQuestions: 2 },
-  { id: 'payments',   patterns: [/\b(payment|stripe|billing|pci|invoice)\b/i], maxQuestions: 2 },
-  { id: 'auth',       patterns: [/\b(auth|login|oauth|sso|session)\b/i], maxQuestions: 2 },
-  { id: 'browser_ai', patterns: [/\b(webgpu|wasm|webllm|browser inference|in-browser)\b/i], maxQuestions: 2 },
-  { id: 'nixos_deploy', patterns: [/\b(nixos|nix|homelab|systemd|caddy)\b/i], maxQuestions: 2 },
-  { id: 'angular',    patterns: [/\b(angular|signals|standalone component)\b/i], maxQuestions: 2 },
-  { id: 'nestjs',     patterns: [/\b(nestjs|nest)\b/i], maxQuestions: 2 },
-];
 ```
+
+The ten shipped triggers, patterns and caps verbatim from `core/triggers.ts`:
+
+```ts
+{ id: 'local_model',  patterns: [/\b(ollama|local model|local inference|on-device|self-hosted)\b/i],  maxQuestions: 3 }
+{ id: 'corpus',       patterns: [/\b(corpus|document|knowledge base|dataset|training data)\b/i],        maxQuestions: 2 }
+{ id: 'vector_db',    patterns: [/\b(vector|embedding|pgvector|weaviate|pinecone|qdrant)\b/i],          maxQuestions: 2 }
+{ id: 'realtime',     patterns: [/\b(real-?time|live|stream|websocket|polling|latency)\b/i],            maxQuestions: 2 }
+{ id: 'payments',     patterns: [/\b(payment|stripe|billing|transaction|credit card|checkout)\b/i],     maxQuestions: 3 }
+{ id: 'auth',         patterns: [/\b(authentication|oauth|saml|ldap|sso|password|mfa|login)\b/i],       maxQuestions: 2 }
+{ id: 'browser_ai',   patterns: [/\b(browser|client-side|webgpu|wasm|web llm|inference)\b/i],           maxQuestions: 2 }
+{ id: 'nixos_deploy', patterns: [/\b(nix|nixos|flakes?|home manager|declarative)\b/i],                  maxQuestions: 2 }
+{ id: 'angular',      patterns: [/\b(angular\w*|ng-|rxjs)\b/i],                                         maxQuestions: 2 }
+{ id: 'nestjs',       patterns: [/\b(nestjs|nest|@nestjs|express|fastify)\b/i],                          maxQuestions: 2 }
+```
+
+The three `local_model` questions, as shipped:
+
+```ts
+{ id: 'a.ctx_window',    prompt: 'What is the model context window (input + output tokens)?',  kind: 'text',   priority: 1 }
+{ id: 'a.vram_gb',       prompt: 'How much VRAM (GB) is available on your hardware?',          kind: 'number', priority: 2 }
+{ id: 'a.wasm_fallback', prompt: 'Is a WASM fallback acceptable if WebGPU is unavailable?',    kind: 'choice', priority: 3 }
+```
+
+Every trigger carries the same `reasonTemplate`, so the reason sentence is built in one place. `normalize()` lowercases, collapses whitespace and strips punctuation except hyphens before matching, which is why the `angular` pattern matches a prefix: `@angular/core` becomes `angularcore` and no `@` survives.
 
 Rules, all enforced in `triggers.ts` and all tested:
 
 - A trigger fires on the first answer whose normalized text matches. The match is recorded as a `TriggerTrace`, not just a boolean, so the UI can show the phrase.
-- Each trigger contributes at most `maxQuestions`; the global adaptive cap is **12**, and the UI shows `4 of 12 follow-ups used`.
+- Each trigger contributes at most `maxQuestions`; the global adaptive cap is **12**. The UI counts what it has: the header reads `{{answeredCount}} of {{total}} answered`, the panel reads `Question {{index + 1}} of {{total}}`, and the footer reads `{{position}} out of {{steps.length}}`, so the total rises the moment a follow-up is inserted. There is no separate follow-up counter.
 - Adaptive questions appear after the step that triggered them, never inside it. Inserting a question mid-step breaks the back button and the draft.
 - Skipping an adaptive question is allowed. It is recorded as unanswered and the sections that needed it are emitted as `{{MISSING: ...}}` placeholders, never as invented text.
 - Triggers rerun on every answer change. Removing "Ollama" from step 1 retracts the three questions it added, and the UI says what it removed and why.
 
-**Step 5 validation** is the one place the wizard pushes back. `validate()` rejects answers under 12 characters and answers matching `/\b(works|it works|good|fast|better|success|done)\b/i` when they are the entire answer. The message is concrete: "Name a number or an observable behavior. 'Loads in under 2s' or '5 unanswerable questions return an abstain, 5 of 5'. 'It works' cannot be tested." The check is a keyword gate over a checked-in list, deterministic, and it covers the common cases. It is not a judge of quality, and the UI does not pretend it is.
+**Step 5 validation** is the one place the wizard pushes back. The shipped `validate()` in `core/steps.ts` checks length first and rejects any answer under 12 characters with `Answer must be at least 12 characters. Name a number, a unit, or an observable behavior.` Below it sits a keyword gate over `/\b(works|it works|good|fast|better|success|done)\b/i`, which returns `Name a number or an observable behavior. "Loads in under 2s" or "5 of 5 items process without errors". "It works" cannot be tested.` That second branch is unreachable as shipped: the length check runs first and every word in the pattern is shorter than 12 characters, so the length rule is the one that rejects vague answers. The rejection still happens and only the intent is dead code. `Question.validate` is not a judge of quality, and the UI does not pretend it is.
 
 ## Answer-to-section mapping
 
@@ -239,7 +253,7 @@ Rules, all enforced in `triggers.ts` and all tested:
 | risk, alt_build | Risks | Trade-offs Considered | |
 | acceptance | Acceptance Criteria | Acceptance criteria (design-verifiable) | `[G]` items |
 | timeline | Timeline | | Phase grouping |
-| a.ctx_window, a.vram, a.wasm_ok | Constraints Measured Up Front | ModelProvider, Capability handling | `[M]` verification items |
+| a.ctx_window, a.vram_gb, a.wasm_fallback | Constraints Measured Up Front | ModelProvider, Capability handling | `[M]` verification items |
 
 A section with no mapped answer is not filled in by the model. It is emitted as a heading with `{{MISSING: which question would answer this}}` underneath, and it shows in the review panel as a gap. This is the structural version of "do not invent": absent input produces a visible hole, not a plausible paragraph.
 
@@ -375,7 +389,7 @@ The fourth guard is the direct answer to the incident that motivated the project
 
 **Structure per file.**
 
-- `proposal.md` has all of: Problem, Goal, Target Signal, Tech Stack, Acceptance Criteria, Trade-offs (the six shared by the existing spec corpus), plus Timeline and Risks.
+- `proposal.md` has all of: Problem, Goal, Target Recruiter Signal, Tech Stack, Acceptance Criteria, Timeline (the six shared by the existing spec corpus), plus Risks. The corpus spells one of them `Target Recruiter Signal`; this repository's own spec renamed it to `Target Signal`, so the validator has to accept a spelling before it can run against the corpus at all.
 - `design.md` has Architecture, Package layout, Provider seams, Validation, Persistence, Trade-offs, What This Proves, Acceptance Criteria, Open Questions.
 - `tasks.md` has at least 3 phases, every item is a checkbox, every item carries one of `[G]` `[E]` `[M]`, and it ends with a Definition of Done.
 
@@ -385,7 +399,7 @@ The fourth guard is the direct answer to the incident that motivated the project
 - `tasks.md` item count falls in 40 to 90. Outside that range the UI warns that the spec is probably too thin or too granular. Measured range across the three deepest existing specs: 63, 76, 77.
 - No `{{MISSING: ...}}` survives in a file marked ready.
 
-**Style.** `style-lint.ts` flags em dashes and each word on the checked-in list in `core/banned-words.ts`, which mirrors the list this repository enforces on its own writing. The same lint runs on this repository's three specs in CI, and it skips its own word list when scanning source files. The app cannot ship text it would reject from itself.
+**Style (planned).** `style-lint.ts` will flag em dashes and each word on a checked-in list in `core/banned-words.ts`. Neither file exists today, and no lint runs in CI: `.github/workflows/ci.yml` runs `npm ci`, `npm run typecheck`, `npm test` and `npm run build`. The three specs committed here are clean of em dashes and of the usual AI vocabulary by hand, not by a check. The intent stands: once the list is checked in, the app is held to the same rules as the repo it lives in.
 
 **The gate.** `gate.ts` reduces the three documents to one decision:
 
@@ -432,7 +446,7 @@ Export reads from the document store, not from the editor buffer content alone, 
 ## Trade-offs Considered
 
 - **Signals vs NgRx.** One screen, one draft, no cross-route state, no server cache. NgRx would add four files per feature to manage state a single store service holds. Signals plus derived computeds is the right size.
-- **Signals-based reactive forms vs a custom question renderer.** The question graph is dynamic: questions appear and retract as triggers fire, and each question records which trigger produced it. Typed reactive forms want a static shape. A small `QuestionCardComponent` driven by a `Question` object handles the dynamism and keeps the trigger trace on the answer, which a `FormControl` would not carry.
+- **Signals-based reactive forms vs a custom question renderer.** The question graph is dynamic: questions appear and retract as triggers fire, and each question records which trigger produced it. Typed reactive forms want a static shape. A small `QuestionPanelComponent` with one control per kind, driven by a `Question` object, handles the dynamism and keeps the trigger trace on the answer, which a `FormControl` would not carry.
 - **CodeMirror 6 vs textarea.** Three editable markdown documents with headings and code fences need an editor. A textarea looks unfinished and offers no folding. ~200 KB, tree-shaken, and it is the pane the user judges the product in.
 - **Zip vs concatenated markdown.** Zip is the obvious answer and it costs a dependency and loses diffability. Concatenated is the default; zip is one dynamic import away for users who want three real files.
 - **Model shapes prose vs model writes files.** Writing files from scratch is a better demo and it invents. Shaping existing sourced blocks keeps every fact traceable. The project's thesis wins over the demo.
@@ -444,26 +458,28 @@ Export reads from the document store, not from the editor buffer content alone, 
 
 ## What This Proves
 
-| Piece | Competency it demonstrates |
-| --- | --- |
-| Interview before generation, enforced in code | Requirements discipline. Knows the hard part is asking the right question, and builds the tool so it cannot skip to the answer |
-| Per-block provenance with four origin kinds | Traceability designed in, not retrofitted. Every claim in the output can be walked back to a keystroke |
-| Export gate that blocks on unreviewed inferred text | Ships the unpopular default because it is the correct one. Treats invisible fabrication as the primary failure mode |
-| `{{MISSING:}}` placeholder protocol | Turns a model's uncertainty into a structured product feature instead of a guess |
-| Marker coverage with a hard fail under 60% | Grounding enforced deterministically, with a measured threshold and a safe fallback |
-| Adaptive question graph with trigger traces and retraction | Dynamic forms done properly, with a visible reason for every change to the flow |
-| Snapshot, diff before apply, locks, import-merge | Defense in depth against one specific real failure. Learned from an incident and encoded, not documented |
-| Runtime context budget check per file | Measures the constraint before using the model, and refuses when it does not fit |
-| `ModelProvider` seam with a stubbed second backend | Abstraction drawn from a real second case, and honest about what is not implemented |
-| 60 ms token coalescing and a worker | Backpressure and concurrency; the form stays at 60 fps while a model decodes |
-| Style lint applied to its own generated output | Holds the tool to the same bar as the repo it lives in |
-| No backend, no API key, static deploy | Picks the architecture with nothing to operate |
+Each piece below is stated as the mechanism it is and what it costs to have it. Nothing here is addressed to a reader outside the project.
+
+| Piece | What it does | What it cost |
+| --- | --- | --- |
+| Interview before generation, enforced in code | Generation cannot start until the nine questions are answered, so the problem, the non-goals, the measurable constraints, and the proof exist before any prose does | A question graph, a trigger engine, and validation state, all before a line of output |
+| Per-block provenance with four origin kinds | Every block records where it came from, so a sentence can be walked back to the answer that produced it | A Block model with an Origin union, and a review state per block |
+| Export gate that blocks on unreviewed inferred text | Inferred text cannot leave the app unreviewed, which is how invisible fabrication becomes a blocking condition instead of a convention | A gate that overrides the download intent, plus a review panel to clear it |
+| `{{MISSING:}}` placeholder protocol | A fact the model does not have becomes a visible gap or a new question, instead of a guess | A token in the prompt, a parser, and a promotion path back into the interview |
+| Marker coverage with a hard fail under 60% | Grounding is measured rather than assumed, and a failed run keeps the safe output | An extra parse pass per file, and a threshold that has to be tuned |
+| Adaptive question graph with trigger traces and retraction | Follow-ups come from the answers and leave when the answer changes, with the reason shown either way | Trigger evaluation on every answer change and a bounded pruning loop |
+| Snapshot, diff before apply, locks, import-merge | A regeneration cannot revert text a human wrote | Four mechanisms for one failure mode, because one guard was not enough |
+| Runtime context budget check per file | The model path is measured against the real context window and refused when it does not fit | The budget has to be computed per file at runtime, not read from a constant |
+| `ModelProvider` seam with a stubbed second backend | The interface is drawn from two real cases, one of them deliberately unimplemented | An interface, a stub that rejects with a named message, and a build without that backend |
+| 60 ms token coalescing in a worker | The answer inputs stay responsive while a model decodes | A worker protocol, a flush timer, and cooperative cancellation |
+| Style lint applied to its own generated output | The tool is held to the same writing rules as the repo it lives in | A word list to maintain, and the risk of false positives on legitimate prose |
+| No backend, no API key, static deploy | Nothing to operate and nothing to pay for; the product is a static bundle | No server-side capability is possible, by construction |
 
 **How this project demonstrates spec driven development.** Three ways, and the third is the one that matters.
 
-1. **It is built from a spec.** This `proposal.md`, `design.md`, and `tasks.md` come first. Every task below traces to a decision above.
+1. **It is built from a spec.** This `proposal.md`, `design.md`, and `tasks.md` come first. Every task in `tasks.md` traces to a decision here.
 2. **It generates that artifact.** The output shape is not invented, it is derived from measuring the eleven existing specs in this repository: which sections recur, which six appear in all of them, how many task items a real spec carries. The tool produces the format the repo already uses.
-3. **It encodes the discipline as software.** The wizard *is* the method. You cannot reach generation without stating the problem, the non-goals, the measurable constraints, and the proof. The acceptance criteria step refuses "it works". The export gate refuses unverified content. A tool that makes you practice SDD in order to produce a spec is a stronger argument for SDD than an essay about it.
+3. **It encodes the discipline as software.** The wizard *is* the method. You cannot reach generation without stating the problem, the non-goals, the measurable constraints, and the proof. The proof question refuses "it works". The export gate refuses unverified content. A tool that makes you practice spec driven development in order to produce a spec is a stronger argument for it than an essay about it.
 
 The loop closes in CI: `spec-forge-answers.json` describes spec-forge itself, and the self-regeneration test rebuilds these three files from those answers through the template path. If the tool cannot write its own spec without a model, the build fails.
 
@@ -473,7 +489,7 @@ The loop closes in CI: `spec-forge-answers.json` describes spec-forge itself, an
 - [ ] The answer "an Angular app using a local Ollama model and pgvector" fires exactly the `local_model`, `vector_db`, and `angular` triggers and adds no more than 7 follow-up questions.
 - [ ] Deleting the word "Ollama" from step 1 retracts the three `local_model` questions and the UI names what it removed.
 - [ ] The adaptive cap holds at 12: an answer matching 6 triggers yields at most 12 follow-ups, and no trigger exceeds its own `maxQuestions`.
-- [ ] Every adaptive question renders the source answer text and the matched phrase, asserted in a component test with a fixture `TriggerTrace`.
+- [ ] Every adaptive question renders the matched phrase and the step that triggered it, asserted in a component test with a fixture `TriggerTrace`.
 - [ ] Step 5's `validate()` rejects "it works", "fast", "good", and any string under 12 characters, and accepts "5 unanswerable questions return an abstain, 5 of 5".
 - [ ] `assemble()` on a complete answer set produces blocks where every block has a non-null `origin` and `origin.kind !== 'model'`.
 - [ ] A section with no mapped answer emits `{{MISSING: ...}}` and does not emit model or template prose.
@@ -485,7 +501,7 @@ The loop closes in CI: `spec-forge-answers.json` describes spec-forge itself, an
 - [ ] `gate.ts` returns non-empty for one unreviewed inferred block, for one surviving placeholder, and for a file missing `Acceptance Criteria`, and returns empty for a fully sourced run.
 - [ ] Confirming every inferred block flips `gate.ts` to empty; rejecting one removes its text and also flips it to empty.
 - [ ] `diff.ts` on a candidate where one section changed and one is locked reports exactly 1 changed section, and the locked text is byte-identical after apply.
-- [ ] Importing Joe's real `01` `proposal.md` marks every parsed section `origin.kind = 'imported'` and `locked = true`, and a later generation run does not alter those blocks.
+- [ ] Importing the portfolio's real `01` `proposal.md` marks every parsed section `origin.kind = 'imported'` and `locked = true`, and a later generation run does not alter those blocks.
 - [ ] `validator.ts` rejects each of the six required proposal sections individually, using six fixtures that each violate exactly one.
 - [ ] `tasks.md` validation rejects a fixture whose items lack `[G]`/`[E]`/`[M]` tags and one whose item count is 20.
 - [ ] `style-lint.ts` flags one em dash and each of the 18 banned words in fixtures, and returns zero findings on the three specs in this repository.
