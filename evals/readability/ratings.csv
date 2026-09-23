@@ -1,0 +1,6 @@
+fixture,proposal_path,score_1_to_5,reads_like_a_person_notes
+f01-local-rag-api,evals/readability/out/f01-local-rag-api/proposal.md,,
+f02-local-first-vault,evals/readability/out/f02-local-first-vault/proposal.md,,
+f03-review-agent,evals/readability/out/f03-review-agent/proposal.md,,
+f04-realtime-board,evals/readability/out/f04-realtime-board/proposal.md,,
+f05-transcript-skill-compiler,evals/readability/out/f05-transcript-skill-compiler/proposal.md,,

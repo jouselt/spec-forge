@@ -12,6 +12,12 @@ coverage/
 *.lcov
 .eslintcache
 
+# Readability eval scratch: the compiled copy and the generated files. `ratings.csv`
+# is tracked, because it is the sheet the human fills in.
+evals/readability/.build/
+evals/readability/out/
+evals/readability/fixtures.json
+
 # Local runtime state
 .atl/
 pids
