@@ -1,7 +1,7 @@
 {
   "name": "spec-forge",
   "version": "1.0.0",
-  "description": "A 100% client-side Angular 20.3 app that interviews users about an idea and produces three markdown files: proposal.md, design.md, tasks.md",
+  "description": "An interview-first spec generator. A guided interview that adapts to your answers, then assembles proposal.md, design.md and tasks.md. Angular 20, fully client-side, no backend and no API key. The interview is live; generation is in progress.",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
