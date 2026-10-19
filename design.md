@@ -67,7 +67,7 @@ src/app/
     validator.ts           required sections, acceptance-criteria shape         done
     banned-words.ts        the 19 banned words and the em dash, from JSON      done
     gate.ts                export gate evaluation and the per-file report      done
-    diff.ts                line-level diff and section-level apply             planned
+    diff.ts                line-level diff and section-level apply             done
     style-lint.ts          em dash + banned word check                         done
     download.ts            one markdown blob per file                         done
     export.ts              bundle concatenation, zip                          planned
@@ -88,7 +88,9 @@ src/app/
     wizard-store.service.ts  signals: answers, questions, traces, index; rail and totals  done
     trigger-reason.ts        the follow-up reason sentence                     done
     review-store.ts        per-block review state                             planned
-    snapshot-store.ts      versioned generated docs, locks, restore            planned
+    snapshot-store.ts      versioned docs, both markdown and blocks           done
+    import-spec.ts         parse a pasted markdown file into locked blocks     done
+    merge.ts               generation meets locked text, section by section    done
   persistence/
     spec-db.ts             idb schema and migrations                           planned
     autosave.ts            debounced writer                                    planned
