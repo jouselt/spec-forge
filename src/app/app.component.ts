@@ -8,6 +8,7 @@ import { ProvenancePanelComponent } from './ui/provenance-panel/provenance-panel
 import { ReviewPanelComponent } from './ui/review-panel/review-panel.component';
 import { DocumentStore } from './state/document-store.service';
 import { WizardStore } from './state/wizard-store.service';
+import { ExportGateComponent } from './ui/export-gate/export-gate.component';
 
 /** Width below which the rail collapses into a toggle, so a phone gets one column. */
 const NARROW_QUERY = '(max-width: 720px)';
@@ -23,6 +24,7 @@ const NARROW_QUERY = '(max-width: 720px)';
     ProvenancePanelComponent,
     ReviewPanelComponent,
     BlockListComponent,
+    ExportGateComponent,
   ],
   template: `
     <div class="app-container">
@@ -100,6 +102,7 @@ const NARROW_QUERY = '(max-width: 720px)';
                 <app-provenance-panel />
                 <app-review-panel />
                 <app-block-list />
+                <app-export-gate />
               </div>
             }
           </section>

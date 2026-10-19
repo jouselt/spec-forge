@@ -462,7 +462,21 @@ export function assemble(answers: Answer[], options: AssemblyOptions = {}): Gene
 }
 
 /** `## Section` headings, with list items joined and paragraphs kept apart. */
-export function renderMarkdown(doc: GeneratedDoc): string {
+export interface RenderOptions {
+  /**
+   * Mark every block that a model wrote and nobody has reviewed. Used when the
+   * "warn instead of block" setting lets a run export anyway: the reader of the
+   * file has to be able to see which sentences were not vouched for. A comment
+   * rather than a word in the prose, so the sentence itself stays exactly as it
+   * was written.
+   */
+  readonly markUnreviewedInferred?: boolean;
+}
+
+/** The comment that marks an unreviewed inferred block in an exported file. */
+export const UNREVIEWED_INFERRED_MARKER = '<!-- INFERRED: unreviewed -->';
+
+export function renderMarkdown(doc: GeneratedDoc, options: RenderOptions = {}): string {
   const lines: string[] = [];
   let section: string | null = null;
   let previous: Block | null = null;
@@ -477,6 +491,14 @@ export function renderMarkdown(doc: GeneratedDoc): string {
       previous = null;
     } else if (previous && !(ADJACENT_LINE.test(previous.text) && ADJACENT_LINE.test(block.text))) {
       lines.push('');
+    }
+
+    if (
+      options.markUnreviewedInferred &&
+      block.origin.kind === 'model' &&
+      block.review === 'unreviewed'
+    ) {
+      lines.push(UNREVIEWED_INFERRED_MARKER);
     }
 
     lines.push(block.text);

@@ -114,7 +114,11 @@ export function evaluate(
   }
 
   for (const finding of findings) {
-    if (finding.severity === 'block') {
+    // A surviving placeholder is already a blocker from the block loop above. It
+    // also comes back from the validator with block severity, and pushing it a
+    // second time here would report every gap twice: once as a gap and once as a
+    // structure problem.
+    if (finding.severity === 'block' && finding.code !== 'placeholder-survives') {
       blocking.push({
         kind: 'structure',
         file: finding.file,
@@ -150,7 +154,70 @@ export function verdictLine(result: GateResult): string {
     } left, exported anyway because the warning setting is on.`;
   }
 
-  return `${result.blocking.length} ${
-    result.blocking.length === 1 ? 'block needs' : 'blocks need'
-  } your review before export.`;
+  return `${describeBlocking(result.blocking)} Export stays locked until then.`;
+}
+
+/**
+ * What is actually wrong, in the words of the thing that is wrong. A gap is not
+ * something to review, it is something to answer, and a report that calls 38
+ * unanswered questions "blocks that need your review" sends the reader looking
+ * for a review button that does not exist.
+ */
+export function describeBlocking(blocking: readonly GateBlocker[]): string {
+  const inferred = blocking.filter((blocker) => blocker.kind === 'unreviewed-inferred').length;
+  const gaps = blocking.filter((blocker) => blocker.kind === 'placeholder').length;
+  const structure = blocking.filter((blocker) => blocker.kind === 'structure').length;
+  const parts: string[] = [];
+
+  if (inferred > 0) {
+    parts.push(
+      `${inferred} inferred ${inferred === 1 ? 'block needs' : 'blocks need'} your review`,
+    );
+  }
+
+  if (gaps > 0) {
+    parts.push(`${gaps} ${gaps === 1 ? 'gap is' : 'gaps are'} still unanswered`);
+  }
+
+  if (structure > 0) {
+    parts.push(
+      `${structure} structure ${structure === 1 ? 'problem' : 'problems'} in the files`,
+    );
+  }
+
+  const sentence = parts.join(' and ');
+
+  return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
+}
+
+/** One reason, with everything it covers, so the report is a list and not a wall. */
+export interface BlockerGroup {
+  readonly file: SpecFile;
+  readonly kind: GateBlocker['kind'];
+  readonly count: number;
+  readonly details: readonly string[];
+}
+
+/**
+ * Group the blockers by file and kind. A run missing every answer produces one
+ * row per gap, and thirty-eight rows of the same sentence is not a report.
+ */
+export function groupBlocking(blocking: readonly GateBlocker[]): BlockerGroup[] {
+  const groups: BlockerGroup[] = [];
+  const index = new Map<string, number>();
+
+  for (const blocker of blocking) {
+    const key = `${blocker.file}:${blocker.kind}`;
+    const at = index.get(key);
+
+    if (at === undefined) {
+      index.set(key, groups.length);
+      groups.push({ file: blocker.file, kind: blocker.kind, count: 1, details: [blocker.detail] });
+    } else {
+      const existing = groups[at];
+      groups[at] = { ...existing, count: existing.count + 1, details: [...existing.details, blocker.detail] };
+    }
+  }
+
+  return groups;
 }

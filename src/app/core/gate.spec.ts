@@ -2,7 +2,7 @@ import { Block, GeneratedDoc } from './question-graph';
 import { SpecFile } from './mapping';
 import { assemble } from '../templates/assembly';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
-import { evaluate, verdictLine } from './gate';
+import { evaluate, groupBlocking, verdictLine } from './gate';
 
 describe('gate', () => {
   function baseline(): GeneratedDoc[] {
@@ -52,7 +52,62 @@ describe('gate', () => {
     expect(result.blocking[0].kind).toBe('unreviewed-inferred');
     expect(result.blocking[0].file).toBe('design');
     expect(result.canExport).toBe(false);
-    expect(verdictLine(result)).toBe('1 block needs your review before export.');
+    expect(verdictLine(result)).toBe(
+      '1 inferred block needs your review. Export stays locked until then.',
+    );
+  });
+
+  it('should say a gap needs answering, not reviewing', () => {
+    const docs = baseline().map((doc) =>
+      doc.file === 'proposal'
+        ? { ...doc, blocks: doc.blocks.filter((block) => block.section !== 'Timeline') }
+        : doc,
+    );
+
+    expect(verdictLine(evaluate(docs))).toBe(
+      '1 structure problem in the files. Export stays locked until then.',
+    );
+  });
+
+  it('should count each reason separately when several are present', () => {
+    const docs = inferred(
+      baseline().map((doc) =>
+        doc.file === 'proposal'
+          ? {
+              ...doc,
+              blocks: [
+                ...doc.blocks,
+                { ...doc.blocks[0], id: 'proposal:problem:gap', text: '{{MISSING: who has it?}}' },
+              ],
+            }
+          : doc,
+      ),
+    );
+
+    expect(verdictLine(evaluate(docs))).toBe(
+      '1 inferred block needs your review and 1 gap is still unanswered. Export stays locked until then.',
+    );
+  });
+
+  it('should group the blockers by file and kind', () => {
+    const docs = baseline().map((doc) =>
+      doc.file === 'proposal'
+        ? {
+            ...doc,
+            blocks: [
+              ...doc.blocks.filter((block) => block.section !== 'Risks'),
+              { ...doc.blocks[0], id: 'proposal:problem:gap-1', text: '{{MISSING: one}}' },
+              { ...doc.blocks[0], id: 'proposal:problem:gap-2', text: '{{MISSING: two}}' },
+            ],
+          }
+        : doc,
+    );
+    const groups = groupBlocking(evaluate(docs).blocking);
+
+    expect(groups.map((group) => `${group.file}:${group.kind}:${group.count}`)).toEqual([
+      'proposal:placeholder:2',
+      'proposal:structure:1',
+    ]);
   });
 
   it('should stop blocking once the inferred block is confirmed', () => {
