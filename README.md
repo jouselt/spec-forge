@@ -114,7 +114,7 @@ npm start      # http://localhost:4200
 | --- | --- |
 | `npm start` | Serve locally on port 4200 |
 | `npm run build` | Build for production into `dist/spec-forge` |
-| `npm test` | The whole suite, headless (602 specs) |
+| `npm test` | The whole suite, headless (610 specs) |
 | `npm run gate` | The pre-commit check: layering, spec style, ESLint on staged files |
 | `npm run typecheck` | TypeScript strict, no emit |
 | `npm run lint` | ESLint over the whole tree, as CI runs it |
@@ -145,19 +145,20 @@ hurry.
 
 Named rather than quietly missing:
 
-- `model/inference.worker.ts`, the file that would import `@mlc-ai/web-llm`. The library is
-  not a dependency, so the worker does not exist; the seam it plugs into (a narrow
-  `MlcEngine` interface plus an injectable loader) does, and it is tested with a fake engine.
-- Promoting a `{{MISSING: ...}}` chip into a new interview question: the question and the
-  answer are built, nothing appends them to the wizard yet.
+- The WebLLM runtime itself. `model/inference.worker.ts` exists, compiles, and resolves the
+  library at run time; without the package installed it answers with a sentence instead of a
+  stack trace. Installing `@mlc-ai/web-llm` is the whole change.
 - The template path writes 15 items where `tasks.md` asks for 40 to 90.
+- Nothing calls `promoteQuestion` from the UI yet: the interview accepts a promoted question
+  and its answer, and the chip that would promote one is parsed, but the button is not
+  wired.
 
 Three checks need a person and are recorded as such in `tasks.md`: the readability rating
 sheet, the human half of the gate eval, and the shaping eval with a real model.
 
 ## Checks
 
-- 602 specs pass, plus `typecheck`, `lint`, `lint:specs`, the layering scan, the secret scan
+- 610 specs pass, plus `typecheck`, `lint`, `lint:specs`, the layering scan, the secret scan
   and three evals.
 - No backend, no API key, no GitHub API: enforced by `scripts/scan-secrets.mjs`, not by this
   paragraph.
