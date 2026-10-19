@@ -25,15 +25,15 @@ Working today:
 - `state/wizard-store.service.ts`: the answers, the question list derived from them, the position, validation, and the answer a block came from
 - `state/document-store.service.ts`: the generated documents, the generate action, block text edits, and the confirm, edit and reject review transitions
 - `state/trigger-reason.ts`: the "Asked because you mentioned {phrase} in step {step}" sentence
-- `ui/`: the question panel, the step rail, the step-stepper footer, six controls, the output tabs with one CodeMirror per block, the provenance panel, the review panel, the block list with click-to-source, and the export gate
-- `npm run typecheck`, `npm run build`, and `npm test` (410 specs) pass
+- `ui/`: the question panel, the step rail, the step-stepper footer, six controls, the output tabs with one CodeMirror per block, the provenance panel, the review panel, the block list with click-to-source, the diff review, the version list and the export gate
+- `npm run typecheck`, `npm run build`, and `npm test` (467 specs) pass
 - `npm run lint:specs` holds the three specs in this repository to the same style rules the app enforces, and runs in CI
-- `npm run eval:readability` and `npm run eval:gate`, each with a half a machine cannot do
+- `npm run eval:readability`, `npm run eval:gate` and `npm run eval:import`, each with a half a machine cannot do
 - `docker compose up` serves the app
 
-Not built yet: the model path, persistence, snapshots, and the bundle plus zip export. A single file downloads; three files at once and a clipboard copy do not.
+Not built yet: the model path, persistence, and the bundle plus zip export. A single file downloads; three files at once and a clipboard copy do not.
 
-`tasks.md` carries the phase list. Phases 1 to 5 are closed and Phase 6 is closed except its eval. Three boxes stay open, and all three need a person: the readability eval in Phase 4, the lint plus under-2s gate in Phase 1, and the human verdicts of the gate eval in Phase 6.
+`tasks.md` carries the phase list. Phases 1 to 7 are closed except two evals. Three boxes stay open, and all three need a person: the readability eval in Phase 4, the lint plus under-2s gate in Phase 1, and the human verdicts of the gate eval in Phase 6.
 
 ## Quick Start
 

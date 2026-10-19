@@ -100,7 +100,8 @@ src/app/
     step-stepper/          segment row plus the "N out of M" footer             done
     controls/              text, longtext, number, choice, list, table          done
     review-panel/  output-tabs/  provenance-panel/  diff-review/
-    model-bar/  export-gate/  style-lint-panel/                              planned
+    snapshot-panel/  export-gate/                                            done
+    model-bar/  style-lint-panel/                                          planned
 ```
 
 No NgRx. One store with a few signals covers it; a store library would add indirection without solving anything this app has.

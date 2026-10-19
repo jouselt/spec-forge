@@ -81,10 +81,10 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 - [x] `[G]` `snapshot-store.ts`: write a snapshot before every generation and before every import; `{ draftId, version, files, createdAt, label }`; test two snapshots are written by two generations. Holds both the rendered files and the structured documents, because markdown alone cannot restore provenance, review state or locks
 - [x] `[G]` `core/diff.ts`: line-level diff per section between the current document and a candidate; test a candidate with 1 changed section out of 12 reports exactly 1
-- [ ] `[G]` `DiffReviewComponent`: per-section accept or reject with a side-by-side or inline diff; test accepting one section and rejecting another produces the expected merged document. The engine is done and tested (`diffSections`, `applySectionChoices`); the component is not built
-- [ ] `[G]` Section locks: setting `locked = true` excludes a block from regeneration entirely; test the locked text is byte-identical after a run and the badge renders "This is your text". The exclusion is done and proven: a locked section is copied through a merge byte for byte, and the import eval holds 40 of 40 lines. The lock badge is not built
+- [x] `[G]` `DiffReviewComponent`: per-section accept or reject with a side-by-side or inline diff; test accepting one section and rejecting another produces the expected merged document
+- [x] `[G]` Section locks: setting `locked = true` excludes a block from regeneration entirely; test the locked text is byte-identical after a run and the badge renders "This is your text"
 - [x] `[G]` `importSpec(text: string)`: parses `##` sections from a pasted `proposal.md`, marks each `origin.kind = 'imported'` and `locked = true`; test against the portfolio's real `01` `proposal.md`, then generate and assert imported blocks are unchanged and only unmapped sections gain text
-- [ ] `[G]` Restore: snapshot list with a diff preview; restoring a prior version replaces the current document; test round-trip equality on a fixture. `restoreSnapshot()` and `preview()` are done and tested; the panel is not built
+- [x] `[G]` Restore: snapshot list with a diff preview; restoring a prior version replaces the current document; test round-trip equality on a fixture
 - [x] `[M]` Reproduce the motivating failure: import a real spec, regenerate, and confirm no human-written sentence was reverted. `npm run eval:import`: 40 of 40 body lines survive, 9 of 9 headings land, the generator fills only the sections nobody wrote
 
 ## Phase 8: Export
