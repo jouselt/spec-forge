@@ -1,4 +1,6 @@
+import { TestBed } from '@angular/core/testing';
 import { DocumentStore } from './document-store.service';
+import { SnapshotStore } from './snapshot-store.service';
 import { Answer, Block, OriginKind, narrowOrigin } from '../core/question-graph';
 import { hasModelOrigin, isPlaceholder, sourceAnswerIds } from '../core/provenance';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
@@ -17,7 +19,12 @@ describe('DocumentStore', () => {
   let store: DocumentStore;
 
   beforeEach(() => {
-    store = new DocumentStore();
+    TestBed.configureTestingModule({});
+    store = TestBed.inject(DocumentStore);
+  });
+
+  beforeEach(() => {
+    TestBed.inject(SnapshotStore).clear();
   });
 
   function allBlocks(): Block[] {

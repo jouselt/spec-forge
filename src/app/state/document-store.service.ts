@@ -1,8 +1,13 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Answer, Block, GeneratedDoc, OriginKind, ReviewState } from '../core/question-graph';
 import { SpecFile } from '../core/mapping';
+import { mergeGeneration } from '../core/merge';
 import { countByOriginKind, missingOrigin, placeholderFor } from '../core/provenance';
 import { assemble, gapQuestionFor } from '../templates/assembly';
+import { SnapshotStore } from './snapshot-store.service';
+
+/** The three files in the order they are read and exported. */
+const FILES_ORDER: readonly SpecFile[] = ['proposal', 'design', 'tasks'];
 
 /**
  * Owns the current generated documents, the generate action, block text
@@ -16,6 +21,7 @@ import { assemble, gapQuestionFor } from '../templates/assembly';
 @Injectable({ providedIn: 'root' })
 export class DocumentStore {
   private readonly docList = signal<GeneratedDoc[]>([]);
+  private readonly snapshots = inject(SnapshotStore);
 
   /** The three files as last generated, in proposal, design, tasks order. */
   readonly docs = this.docList.asReadonly();
@@ -35,9 +41,48 @@ export class DocumentStore {
     return countByOriginKind(this.blocksFor(file));
   }
 
-  /** Replace the documents with a fresh assembly. Never appends. */
+  /**
+   * Replace the documents with a fresh assembly, behind two rules.
+   *
+   * A snapshot of what is there now is written first, so a generation can undo
+   * itself. And the assembly is merged with the current documents rather than
+   * replacing them, so a section holding locked text survives byte for byte: that
+   * is what makes an import safe and what makes a hand-written sentence survive a
+   * regeneration.
+   */
   generate(answers: Answer[]): void {
-    this.setDocs(assemble(answers));
+    const current = this.docList();
+
+    this.snapshots.write(current, current.length === 0 ? 'before the first generate' : 'before a generate');
+    this.setDocs(mergeGeneration(current, assemble(answers)));
+  }
+
+  /**
+   * Bring an imported file into the store. The snapshot is written first, for the
+   * same reason generation writes one: nothing may be lost that was not saved.
+   */
+  importDoc(doc: GeneratedDoc): void {
+    this.snapshots.write(this.docList(), `before importing ${doc.file}.md`);
+
+    const others = this.docList().filter((candidate) => candidate.file !== doc.file);
+    const ordered = [...others, doc].sort(
+      (left, right) => FILES_ORDER.indexOf(left.file) - FILES_ORDER.indexOf(right.file),
+    );
+
+    this.docList.set(ordered);
+  }
+
+  /** Put a snapshot back. Returns false for an unknown id. */
+  restoreSnapshot(id: string): boolean {
+    const restored = this.snapshots.restore(id);
+
+    if (!restored) {
+      return false;
+    }
+
+    this.docList.set(restored);
+
+    return true;
   }
 
   /**
