@@ -10,6 +10,7 @@
     "test": "ng test --watch=false --browsers=ChromeHeadless --code-coverage",
     "test:watch": "ng test",
     "lint:specs": "node evals/style/run.mjs",
+    "eval:import": "node evals/import/run.mjs",
     "eval:gate": "node evals/gate/run.mjs",
     "eval:gate:confirm": "node evals/gate/run.mjs --confirm",
     "eval:readability": "node evals/readability/run.mjs",

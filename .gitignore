@@ -22,6 +22,8 @@ evals/readability/fixtures.json
 # is tracked, because it is the sheet the human fills in.
 evals/gate/.build/
 evals/gate/out/
+evals/import/.build/
+evals/import/out/
 
 # Local runtime state
 .atl/
