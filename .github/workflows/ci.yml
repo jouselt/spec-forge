@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run scan:imports
+      - run: npm run scan:secrets
       - run: npm run lint:specs
       - run: npm run typecheck
       - run: npm test

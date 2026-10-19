@@ -10,6 +10,7 @@
     "lint": "eslint src evals scripts --max-warnings=0",
     "lint:specs": "node evals/style/run.mjs",
     "scan:imports": "node scripts/scan-imports.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
     "gate": "node scripts/gate.mjs",
     "gate:all": "node scripts/gate.mjs --all",
     "typecheck": "tsc --noEmit",

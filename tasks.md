@@ -120,13 +120,13 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 10: Self-regeneration and docs
 
-- [ ] `[G]` `fixtures/spec-forge-answers.json`: the answers that describe spec-forge itself, covering all nine base steps plus the adaptive questions its own triggers fire
-- [ ] `[G]` Self-regeneration test: run `assemble()` on that fixture and assert every required heading appears in each of the three outputs
-- [ ] `[G]` Assert the regenerated `tasks.md` item count falls in 40 to 90 and every item carries a tag
-- [ ] `[G]` CI job running the self-regeneration test on every PR; the build fails if the tool cannot write its own spec without a model
-- [ ] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the demo script in 6 steps
-- [ ] `[G]` README states that the model is optional and that the template path is the default, and names the measured context budget that decides whether shaping runs
-- [ ] `[G]` Source scan test: no API key, no `fetch` to a non-CDN host, and no GitHub API reference anywhere outside the model CDN allowlist
+- [x] `[G]` `fixtures/spec-forge-answers.json`: the answers that describe spec-forge itself, covering all nine base steps plus the adaptive questions its own triggers fire
+- [x] `[G]` Self-regeneration test: run `assemble()` on that fixture and assert every required heading appears in each of the three outputs
+- [ ] `[G]` Assert the regenerated `tasks.md` item count falls in 40 to 90 and every item: MEASURED AT 15. `self-regeneration.spec.ts` asserts every item carries a tag and that the list is not shorter than the 15 it produces today, so a regression fails; the template path cannot reach 40 yet and that is a real gap in `tasks.tpl.ts`, not a test to lower carries a tag
+- [x] `[G]` CI job running the self-regeneration test on every PR; the build fails if the tool cannot write its own spec without a model
+- [x] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the demo script in 6 steps
+- [x] `[G]` README states that the model is optional and that the template path is the default, and names the measured context budget that decides whether shaping runs
+- [x] `[G]` Source scan test: no API key, no `fetch` to a non-CDN host, and no GitHub API reference anywhere outside the model CDN allowlist
 - [ ] `[M]` Deploy to GitHub Pages at `jouselt.github.io/spec-forge`; complete a full interview in the deployed build with no model and download the bundle
 - [ ] `[M]` DevTools Network on second load with the model cached: zero requests
 - [ ] `[M]` Demo script timed end to end: under 8 minutes from blank page to downloaded bundle

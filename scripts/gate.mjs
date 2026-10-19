@@ -73,6 +73,7 @@ function main() {
 
   const results = [
     run('layering', 'node', ['scripts/scan-imports.mjs']),
+    run('secrets', 'node', ['scripts/scan-secrets.mjs']),
     run('spec style', 'node', ['evals/style/run.mjs']),
     run(`eslint on ${mode}`, 'npx', ['eslint', '--max-warnings=0', ...target]),
   ];
