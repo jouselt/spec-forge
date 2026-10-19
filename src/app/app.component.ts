@@ -8,6 +8,8 @@ import { ProvenancePanelComponent } from './ui/provenance-panel/provenance-panel
 import { ReviewPanelComponent } from './ui/review-panel/review-panel.component';
 import { DocumentStore } from './state/document-store.service';
 import { DraftService } from './state/draft.service';
+import { ModelService } from './state/model.service';
+import { ModelBarComponent } from './ui/model-bar/model-bar.component';
 import { WizardStore } from './state/wizard-store.service';
 import { ExportGateComponent } from './ui/export-gate/export-gate.component';
 import { DiffReviewComponent } from './ui/diff-review/diff-review.component';
@@ -28,6 +30,7 @@ const NARROW_QUERY = '(max-width: 720px)';
     ReviewPanelComponent,
     BlockListComponent,
     ExportGateComponent,
+    ModelBarComponent,
     DiffReviewComponent,
     SnapshotPanelComponent,
   ],
@@ -52,6 +55,8 @@ const NARROW_QUERY = '(max-width: 720px)';
         </div>
 
         <p class="progress">{{ store.answeredCount() }} of {{ store.total() }} answered</p>
+
+        <app-model-bar />
       </header>
 
       <div class="app-layout">
@@ -292,6 +297,7 @@ export class AppComponent {
   );
 
   readonly draft = inject(DraftService);
+  readonly model = inject(ModelService);
 
   constructor() {
     // A phone gets the content first; the rail is one tap away.
@@ -352,7 +358,18 @@ export class AppComponent {
    * Assemble the three files from the answers and show them. The template path
    * is the default, so this hands the store the answers and no model is loaded.
    */
-  generate(): void {
+  async generate(): Promise<void> {
+    // With a model turned on the run goes through the shaper, which refuses to use output
+    // that does not cite its answers. Everything else is the template path, unchanged.
+    if (this.model.canShape()) {
+      const result = await this.model.shape(this.store.snapshot());
+
+      this.docs.setDocs([...result.docs]);
+      this.outputOpen.set(true);
+
+      return;
+    }
+
     this.docs.propose(this.store.snapshot());
     this.outputOpen.set(true);
   }

@@ -96,25 +96,25 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 9: Optional model path
 
-- [ ] `[G]` `model/model-provider.ts`: `ModelProvider`, `ModelInfo`, `StreamOpts`, `LoadProgress`, `StreamChunk`, matching the project 11 seam; test it compiles under strict with no `any`
-- [ ] `[G]` `Shaper` interface with two implementations: `TemplateShaper` (no model) and `LlmShaper` (worker-backed); test both satisfy the interface and `TemplateShaper.load` never touches the worker
-- [ ] `[G]` `model/inference.worker.ts` with `WebWorkerMLCEngineHandler` from `@mlc-ai/web-llm`; main thread uses `CreateWebWorkerMLCEngine`
-- [ ] `[G]` `WebLlmProvider` implements `load`, `stream`, `interrupt`, `unload`; `stream` is an `AsyncIterable` of deltas; test with a fake engine injected (no model download in CI)
-- [ ] `[G]` `LiteRtProvider` stub whose `load` rejects with "LiteRT backend not available in this build"; test the exact message
-- [ ] `[G]` `model/models.ts`: VRAM and context table read from `prebuiltAppConfig` at runtime with a checked-in fallback table (879 / 1895 / 2504 / 3431 / 5106 MB, 4096 context); test every entry has `vramBytes > 0` and `contextTokens > 0`
-- [ ] `[G]` `ModelBarComponent`: off, template only, or shape with model; shows VRAM next to each model; marks 879 MB as default and 2504 MB as recommended; test default selection is `off`
-- [ ] `[G]` Token estimate reuse: `max(chars/4, words*1.30)` labelled as an estimate everywhere it appears; test determinism and that the word "estimate" is in the label
-- [ ] `[G]` Per-file budget check `estimate(input) + 256 + outputReserve <= contextTokens` with `outputReserve` 900 / 1400 / 1100; test the 4096 case passes, the 1024 case refuses naming all three numbers, and switching to a `-1k` model recomputes with no reload
-- [ ] `[G]` `model/prompts/`: one shaping prompt per file requiring `[[answer:N]]` on every factual sentence and `{{MISSING: <question>}}` in place of any unknown fact; test each prompt contains both instructions
-- [ ] `[G]` `markers.ts`: parse `[[answer:N]]`, compute `coverage = marked / total`; test 10 sentences with 7 markers yields 0.70, and 10 with 5 fails the run
-- [ ] `[G]` Coverage routing: at least 0.80 accepted, 0.60 to 0.80 accepted with a banner naming the percentage, under 0.60 fails and keeps template output byte-identical; test all three branches
-- [ ] `[G]` Marked sentences become `origin.kind = 'answer'`; unmarked sentences become separate blocks with `origin.kind = 'model'` and `review = 'unreviewed'`; test a mixed fixture splits correctly
-- [ ] `[G]` `placeholders.ts`: parse `{{MISSING: <question>}}` into chips; test 4 fixtures including a malformed one
-- [ ] `[G]` Promoting a chip appends a question to the interview with `source = 'promoted'` and `prompt` equal to the placeholder text; test the appended question
-- [ ] `[G]` Worker protocol types `ToWorker` and `FromWorker`; deltas coalesced and flushed every 60 ms; test 200 deltas inside 60 ms produce 1 flush (fakeAsync)
-- [ ] `[G]` Cancel is cooperative through an `AbortSignal` checked between decode steps; test that cancelling during the `design.md` run leaves the `proposal.md` result present and editable
-- [ ] `[G]` `CapabilityService.detect()` returns `{ webgpu, adapterInfo?, maxBufferSize? }`; test the absent-`navigator.gpu` branch
-- [ ] `[G]` WASM fallback banner states the 5 to 20x slowdown range and names Safari when applicable; test the text is present
+- [x] `[G]` `model/model-provider.ts`: `ModelProvider`, `ModelInfo`, `StreamOpts`, `LoadProgress`, `StreamChunk`, matching the project 11 seam; test it compiles under strict with no `any`
+- [x] `[G]` `Shaper` interface with two implementations: `TemplateShaper` (no model) and `LlmShaper` (worker-backed); test both satisfy the interface and `TemplateShaper.load` never touches the worker
+- [ ] `[G]` `model/inference.worker.ts` with `WebWorkerMLCEngineHandler` from `@mlc-ai/web-llm`: NOT BUILT, because the library is not a dependency and cannot be verified here. The seam it would plug into exists and is tested with a fake engine (`providers.ts` declares `MlcEngine` and `EngineLoader`), and the build says so instead of failing silently; main thread uses `CreateWebWorkerMLCEngine`
+- [x] `[G]` `WebLlmProvider` implements `load`, `stream`, `interrupt`, `unload`; `stream` is an `AsyncIterable` of deltas; test with a fake engine injected (no model download in CI)
+- [x] `[G]` `LiteRtProvider` stub whose `load` rejects with "LiteRT backend not available in this build"; test the exact message
+- [x] `[G]` `model/models.ts`: VRAM and context table read from `prebuiltAppConfig` at runtime with a checked-in fallback table (879 / 1895 / 2504 / 3431 / 5106 MB, 4096 context); test every entry has `vramBytes > 0` and `contextTokens > 0`
+- [x] `[G]` `ModelBarComponent`: off, template only, or shape with model; shows VRAM next to each model; marks 879 MB as default and 2504 MB as recommended; test default selection is `off`
+- [x] `[G]` Token estimate reuse: `max(chars/4, words*1.30)` labelled as an estimate everywhere it appears; test determinism and that the word "estimate" is in the label
+- [x] `[G]` Per-file budget check `estimate(input) + 256 + outputReserve <= contextTokens` with `outputReserve` 900 / 1400 / 1100; test the 4096 case passes, the 1024 case refuses naming all three numbers, and switching to a `-1k` model recomputes with no reload
+- [x] `[G]` `model/prompts/`: one shaping prompt per file requiring `[[answer:N]]` on every factual sentence and `{{MISSING: <question>}}` in place of any unknown fact; test each prompt contains both instructions
+- [x] `[G]` `markers.ts`: parse `[[answer:N]]`, compute `coverage = marked / total`; test 10 sentences with 7 markers yields 0.70, and 10 with 5 fails the run
+- [x] `[G]` Coverage routing: at least 0.80 accepted, 0.60 to 0.80 accepted with a banner naming the percentage, under 0.60 fails and keeps template output byte-identical; test all three branches
+- [x] `[G]` Marked sentences become `origin.kind = 'answer'`; unmarked sentences become separate blocks with `origin.kind = 'model'` and `review = 'unreviewed'`; test a mixed fixture splits correctly
+- [x] `[G]` `placeholders.ts`: parse `{{MISSING: <question>}}` into chips; test 4 fixtures including a malformed one
+- [ ] `[G]` Promoting a chip appends a question to the interview with `source = 'promoted'`: HALF. `questionForChip` and `promotedAnswer` build the question and the answer with the placeholder text as the prompt, and the chips are parsed and deduped, but nothing appends to the wizard yet: `WizardStore.resolve()` would need to carry promoted questions through the trigger resolution, which is a change to the core the rest of the interview depends on and `prompt` equal to the placeholder text; test the appended question
+- [x] `[G]` Worker protocol types `ToWorker` and `FromWorker`; deltas coalesced and flushed every 60 ms; test 200 deltas inside 60 ms produce 1 flush (fakeAsync)
+- [x] `[G]` Cancel is cooperative through an `AbortSignal` checked between decode steps; test that cancelling during the `design.md` run leaves the `proposal.md` result present and editable
+- [x] `[G]` `CapabilityService.detect()` returns `{ webgpu, adapterInfo?, maxBufferSize? }`; test the absent-`navigator.gpu` branch
+- [x] `[G]` WASM fallback banner states the 5 to 20x slowdown range and names Safari when applicable; test the text is present
 - [ ] `[M]` DevTools Performance: main thread idle while shaping; typing in an answer input never blocks
 - [ ] `[E]` Shaping eval: 5 answer sets, 3B model, 15 files; assert at least 12 of 15 runs score marker coverage at or above 0.80, and a human judge finds zero facts in the marked sentences that the cited answer does not support
 
