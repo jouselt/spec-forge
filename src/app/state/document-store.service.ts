@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Answer, Block, GeneratedDoc, OriginKind, ReviewState } from '../core/question-graph';
 import { SpecFile } from '../core/mapping';
-import { mergeGeneration } from '../core/merge';
+import { hasAnyChange, mergeGeneration } from '../core/merge';
+import { applySectionChoices } from '../core/diff';
 import { countByOriginKind, missingOrigin, placeholderFor } from '../core/provenance';
 import { assemble, gapQuestionFor } from '../templates/assembly';
 import { SnapshotStore } from './snapshot-store.service';
@@ -21,10 +22,14 @@ const FILES_ORDER: readonly SpecFile[] = ['proposal', 'design', 'tasks'];
 @Injectable({ providedIn: 'root' })
 export class DocumentStore {
   private readonly docList = signal<GeneratedDoc[]>([]);
+  private readonly proposalList = signal<GeneratedDoc[] | null>(null);
   private readonly snapshots = inject(SnapshotStore);
 
   /** The three files as last generated, in proposal, design, tasks order. */
   readonly docs = this.docList.asReadonly();
+
+  /** A generation waiting on a decision, or null. Never applied on its own. */
+  readonly proposal = this.proposalList.asReadonly();
 
   /** Every block across the three files. */
   readonly totalBlocks = computed(() =>
@@ -49,12 +54,79 @@ export class DocumentStore {
    * replacing them, so a section holding locked text survives byte for byte: that
    * is what makes an import safe and what makes a hand-written sentence survive a
    * regeneration.
+   *
+   * This applies immediately. The UI goes through `propose()` instead, so a person
+   * sees what would change before it does.
    */
   generate(answers: Answer[]): void {
     const current = this.docList();
 
     this.snapshots.write(current, current.length === 0 ? 'before the first generate' : 'before a generate');
     this.setDocs(mergeGeneration(current, assemble(answers)));
+  }
+
+  /**
+   * Offer a generation instead of applying it.
+   *
+   * Nothing on screen changes: the candidate is held in `proposal` and the UI asks
+   * per section. With no documents yet there is nothing to protect, so the first
+   * generation applies straight away.
+   */
+  propose(answers: Answer[]): void {
+    const current = this.docList();
+
+    this.snapshots.write(
+      current,
+      current.length === 0 ? 'before the first generate' : 'before a generate',
+    );
+
+    const candidate = mergeGeneration(current, assemble(answers));
+
+    if (current.length === 0 || !hasAnyChange(current, candidate)) {
+      this.proposalList.set(null);
+      this.setDocs(candidate);
+
+      return;
+    }
+
+    this.proposalList.set(candidate);
+  }
+
+  /** Take the accepted sections of the proposal and drop the rest. */
+  applyProposal(accepted: ReadonlySet<string>): void {
+    const candidate = this.proposalList();
+
+    if (!candidate) {
+      return;
+    }
+
+    const current = this.docList();
+    const merged = candidate.map((doc) => {
+      const before = current.find((existing) => existing.file === doc.file);
+
+      return before ? applySectionChoices(before, doc, accepted) : doc;
+    });
+
+    this.proposalList.set(null);
+    this.setDocs(merged);
+  }
+
+  /** Throw the proposal away. Nothing was written, so this costs nothing. */
+  discardProposal(): void {
+    this.proposalList.set(null);
+  }
+
+  /**
+   * Pin or unpin one block. A locked block is excluded from regeneration, so this
+   * is the control that turns "I wrote this" into a promise the generator keeps.
+   */
+  toggleLock(id: string): void {
+    this.updateBlock(id, (block) => ({ ...block, locked: !block.locked }));
+  }
+
+  /** Lock one block explicitly, for an import or a restore. */
+  setLocked(id: string, locked: boolean): void {
+    this.updateBlock(id, (block) => (block.locked === locked ? block : { ...block, locked }));
   }
 
   /**

@@ -12,6 +12,7 @@
  */
 
 import { Block, GeneratedDoc } from './question-graph';
+import { diffSections } from './diff';
 import { SpecFile } from './mapping';
 
 /** Sections of one file that hold at least one locked block. */
@@ -88,6 +89,41 @@ export function mergeGeneration(
 /** Does this document hold any text a generation may not overwrite? */
 export function hasLockedBlocks(docs: readonly GeneratedDoc[]): boolean {
   return docs.some((doc) => doc.blocks.some((block) => block.locked));
+}
+
+/**
+ * Would applying these candidates change anything a person would notice?
+ *
+ * Used to skip the review step when there is nothing to review: a proposal that
+ * changes nothing is noise, and asking about it would teach a person to click
+ * through the one that mattered.
+ */
+export function hasAnyChange(
+  current: readonly GeneratedDoc[],
+  candidate: readonly GeneratedDoc[],
+): boolean {
+  return changedSectionCount(current, candidate) > 0;
+}
+
+/** How many sections across the three files a generation would change. */
+export function changedSectionCount(
+  current: readonly GeneratedDoc[],
+  candidate: readonly GeneratedDoc[],
+): number {
+  let total = 0;
+
+  for (const doc of candidate) {
+    const before = current.find((existing) => existing.file === doc.file);
+
+    if (!before) {
+      total += doc.blocks.length > 0 ? 1 : 0;
+      continue;
+    }
+
+    total += diffSections(before, doc).filter((diff) => diff.changed).length;
+  }
+
+  return total;
 }
 
 /** The sections of one file that a generation would leave alone. */

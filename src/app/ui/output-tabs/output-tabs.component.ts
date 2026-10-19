@@ -53,14 +53,37 @@ interface SectionGroup {
               <h3 class="section-heading">{{ group.section }}</h3>
 
               @for (block of group.blocks; track block.id) {
-                <div class="block-editor" [attr.data-block-id]="block.id">
+                <div
+                  class="block-editor"
+                  [attr.data-block-id]="block.id"
+                  [class.is-locked]="block.locked"
+                >
                   <app-markdown-editor
                     [value]="block.text"
                     (valueChange)="onBlockText(block.id, $event)"
                   />
-                  <p class="block-kind" [attr.data-kind]="block.origin.kind">
-                    {{ block.origin.kind }}
-                  </p>
+                  <div class="block-meta">
+                    <p class="block-kind" [attr.data-kind]="block.origin.kind">
+                      {{ block.origin.kind }}
+                    </p>
+                    <button
+                      type="button"
+                      class="lock-toggle"
+                      [attr.data-block-id]="block.id"
+                      [attr.aria-pressed]="block.locked"
+                      [title]="
+                        block.locked
+                          ? 'Unpin this section so a regeneration may rewrite it'
+                          : 'Pin this section so a regeneration never rewrites it'
+                      "
+                      (click)="toggleLock(block.id)"
+                    >
+                      {{ block.locked ? 'Unpin' : 'Pin' }}
+                    </button>
+                    @if (block.locked) {
+                      <span class="lock-badge">This is your text</span>
+                    }
+                  </div>
                 </div>
               }
             </article>
@@ -104,6 +127,25 @@ interface SectionGroup {
       .block-editor {
         margin-bottom: 0.5rem;
       }
+      .block-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .lock-toggle {
+        font-size: 0.7rem;
+        padding: 0.05rem 0.4rem;
+        cursor: pointer;
+      }
+      .lock-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #7a5b00;
+        background: #fff4cc;
+        border-radius: 3px;
+        padding: 0.05rem 0.35rem;
+      }
       .block-kind {
         margin: 0.15rem 0 0;
         font-size: 0.7rem;
@@ -144,6 +186,11 @@ export class OutputTabsComponent {
 
   select(file: SpecFile): void {
     this.active.set(file);
+  }
+
+  /** Pin or unpin one block, so a regeneration leaves its section alone. */
+  toggleLock(id: string): void {
+    this.store.toggleLock(id);
   }
 
   /**

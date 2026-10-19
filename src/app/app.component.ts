@@ -9,6 +9,8 @@ import { ReviewPanelComponent } from './ui/review-panel/review-panel.component';
 import { DocumentStore } from './state/document-store.service';
 import { WizardStore } from './state/wizard-store.service';
 import { ExportGateComponent } from './ui/export-gate/export-gate.component';
+import { DiffReviewComponent } from './ui/diff-review/diff-review.component';
+import { SnapshotPanelComponent } from './ui/snapshot-panel/snapshot-panel.component';
 
 /** Width below which the rail collapses into a toggle, so a phone gets one column. */
 const NARROW_QUERY = '(max-width: 720px)';
@@ -25,6 +27,8 @@ const NARROW_QUERY = '(max-width: 720px)';
     ReviewPanelComponent,
     BlockListComponent,
     ExportGateComponent,
+    DiffReviewComponent,
+    SnapshotPanelComponent,
   ],
   template: `
     <div class="app-container">
@@ -102,7 +106,9 @@ const NARROW_QUERY = '(max-width: 720px)';
                 <app-provenance-panel />
                 <app-review-panel />
                 <app-block-list />
+                <app-diff-review />
                 <app-export-gate />
+                <app-snapshot-panel />
               </div>
             }
           </section>
@@ -308,7 +314,7 @@ export class AppComponent {
    * is the default, so this hands the store the answers and no model is loaded.
    */
   generate(): void {
-    this.docs.generate(this.store.snapshot());
+    this.docs.propose(this.store.snapshot());
     this.outputOpen.set(true);
   }
 

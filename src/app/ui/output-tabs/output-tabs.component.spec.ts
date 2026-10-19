@@ -206,4 +206,39 @@ describe('OutputTabsComponent', () => {
     expect(editors().length).toBe(0);
     expect(headings()).toEqual([]);
   });
+
+  it('should pin a block so a regeneration leaves its section alone', () => {
+    const block = store.blocksFor('proposal')[0];
+    const row = fixture.nativeElement.querySelector(
+      `.block-editor[data-block-id="${block.id}"]`,
+    ) as HTMLElement;
+
+    expect(row.querySelector('.lock-badge')).toBeNull();
+    expect((row.querySelector('.lock-toggle') as HTMLButtonElement).textContent?.trim()).toBe('Pin');
+
+    (row.querySelector('.lock-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(store.blocksFor('proposal')[0].locked).toBe(true);
+    expect(row.classList.contains('is-locked')).toBe(true);
+    expect(row.querySelector('.lock-badge')?.textContent?.trim()).toBe('This is your text');
+    expect((row.querySelector('.lock-toggle') as HTMLButtonElement).textContent?.trim()).toBe(
+      'Unpin',
+    );
+  });
+
+  it('should unpin it again', () => {
+    const block = store.blocksFor('proposal')[0];
+    const row = fixture.nativeElement.querySelector(
+      `.block-editor[data-block-id="${block.id}"]`,
+    ) as HTMLElement;
+
+    (row.querySelector('.lock-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (row.querySelector('.lock-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(store.blocksFor('proposal')[0].locked).toBe(false);
+    expect(row.querySelector('.lock-badge')).toBeNull();
+  });
 });
