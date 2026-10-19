@@ -14,11 +14,11 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 - [x] `[G]` `ng new spec-forge --standalone --style=scss --routing=false`; assert `@angular/core` resolves to `20.3.x`; set `"strict": true` and `"strictTemplates": true` in `tsconfig.json`; `npm run build` succeeds
 - [x] `[G]` Directory layout under `src/app/`: `core/`, `templates/`, `model/`, `state/`, `persistence/`, `ui/`
-- [ ] `[G]` Source scan test: no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (fails the build). No such scan exists yet
+- [x] `[G]` Source scan test: no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (fails the build). No such scan exists yet
 - [x] `[G]` `AppComponent` (selector `app-root`) with a header, a collapsible step rail on the left, a content region, and the footer stepper; tests cover the header, the populated rail, the rail toggle and the footer
 - [x] `[G]` `npm run typecheck` (`tsc --noEmit`) wired, and a GitHub Actions workflow running `npm ci && npm run typecheck && npm test && npm run build`
-- [ ] `[G]` `npm run lint` wired into a pre-commit hook and into CI. The script does not exist, eslint is not installed, and `.eslintrc.json` also names `@typescript-eslint/parser` and a `@typescript-eslint` rule that are not dependencies
-- [ ] `[M]` A gate command that completes in under 2s on a clean checkout. `npm test` runs the whole Karma suite with coverage and takes about 8s wall
+- [x] `[G]` `npm run lint` wired into a pre-commit hook and into CI. The script does not exist, eslint is not installed, and `.eslintrc.json` also names `@typescript-eslint/parser` and a `@typescript-eslint` rule that are not dependencies
+- [x] `[G]` A gate command that completes in under 2s on a clean checkout: `npm run gate` measured at 1494 ms with one staged file, 2843 ms for the whole tree. Repo-wide checks (layering, spec style) plus ESLint on the staged files; `npm run gate:all` for everything
 
 ## Phase 2: Question graph and triggers
 
@@ -40,8 +40,8 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 - [x] `[G]` The follow-up reason: `describeTrigger()` renders "Asked because you mentioned {phrase} in step {step}", or "in a follow-up question" when the answer that fired the trace was itself adaptive; the panel shows it as a paragraph, the rail shows it under the prompt with a "Follow-up" tag, and the store spec asserts the sentence from a real trace
 - [x] `[G]` `WizardStore` in `state/wizard-store.service.ts` (signals): `answers`, `questions`, `traces`, `index`; derived `total`, `currentIndex`, `current`, `answeredCount`, `currentError`, `canAdvance`, `rail`; tests assert that adding an answer recomputes the question list and that retraction prunes answers whose question disappeared
 - [x] `[G]` Test the counters that ship: the header reads "N of M answered", the panel "Question N of M", and the footer "N out of M". Tests cover 0 of 9, the growth to 12 when the `local_model` follow-ups appear, the shrink back to 9 when the keyword goes, and the moving current segment
-- [ ] `[G]` `persistence/spec-db.ts`: `idb` database `spec-forge` version 1 with stores `drafts`, `answers`, `docs`, `snapshots`, `locks`; `autosave.ts` debounces 400 ms on answer edit and writes at once on step change; test open/put/get plus 20 rapid edits producing 1 write (fakeAsync)
-- [ ] `[G]` Resume: seed a draft at step 7 with 12 answers, reload state, assert the wizard opens at step 7 with all 12 answer values; test the restore path
+- [x] `[G]` `persistence/spec-db.ts`: `idb` database `spec-forge` version 1 with stores `drafts`, `answers`, `docs`, `snapshots`, `locks`; `autosave.ts` debounces 400 ms on answer edit and writes at once on step change; test open/put/get plus 20 rapid edits producing 1 write (fakeAsync)
+- [x] `[G]` Resume: seed a draft at step 7 with 12 answers, reload state, assert the wizard opens at step 7 with all 12 answer values; test the restore path
 - [ ] `[M]` Kill the tab at step 7, reopen, confirm nothing was lost including the adaptive badge state
 
 ## Phase 4: Mapping and template assembly
@@ -89,9 +89,9 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 8: Export
 
-- [ ] `[G]` `export.ts`: `downloadMarkdown(file, text)` creates a `Blob` with type `text/markdown` and filename `proposal.md` / `design.md` / `tasks.md`; test the three filenames
-- [ ] `[G]` Bundle: concatenated `spec-bundle.md` with `<!-- FILE: proposal.md -->` separators in order; optional zip via `fflate` behind `await import('fflate')`; test the built main bundle contains no `fflate` string
-- [ ] `[G]` Copy to clipboard via `navigator.clipboard.writeText` receives the full document text; export reads from the document store, so re-exporting a reloaded draft preserves provenance and review state
+- [x] `[G]` `export.ts`: `downloadMarkdown(file, text)` creates a `Blob` with type `text/markdown` and filename `proposal.md` / `design.md` / `tasks.md`; test the three filenames
+- [x] `[G]` Bundle: concatenated `spec-bundle.md` with `<!-- FILE: proposal.md -->` separators in order; optional zip via `fflate` behind `await import('fflate')`; test the built main bundle contains no `fflate` string
+- [x] `[G]` Copy to clipboard via `navigator.clipboard.writeText` receives the full document text; export reads from the document store, so re-exporting a reloaded draft preserves provenance and review state
 - [ ] `[M]` Download all four options on Chrome and Firefox and open each file in an editor
 
 ## Phase 9: Optional model path

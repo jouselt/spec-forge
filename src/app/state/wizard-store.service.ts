@@ -143,6 +143,20 @@ export class WizardStore {
     this.applyAnswers([...this.answerList(), this.createAnswer(question, text, now)]);
   }
 
+  /**
+   * Put a stored draft back, before anything else runs.
+   *
+   * The answers go in first and the question list is rebuilt from them, because every
+   * follow-up question is derived: restoring the step before the answers would land at an
+   * index that means something else by the time it is applied. The traces are recomputed
+   * from the answers rather than trusted from disk, for the same reason.
+   */
+  restore(answers: Answer[]): void {
+    this.applyAnswers([...answers]);
+    this.position.set(0);
+    this.highlight.set(null);
+  }
+
   /** Advance one question. Blocked while the current question fails validation. */
   next(): void {
     if (!this.canAdvance()) {

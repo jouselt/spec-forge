@@ -7,6 +7,7 @@ import { OutputTabsComponent } from './ui/output-tabs/output-tabs.component';
 import { ProvenancePanelComponent } from './ui/provenance-panel/provenance-panel.component';
 import { ReviewPanelComponent } from './ui/review-panel/review-panel.component';
 import { DocumentStore } from './state/document-store.service';
+import { DraftService } from './state/draft.service';
 import { WizardStore } from './state/wizard-store.service';
 import { ExportGateComponent } from './ui/export-gate/export-gate.component';
 import { DiffReviewComponent } from './ui/diff-review/diff-review.component';
@@ -58,7 +59,7 @@ const NARROW_QUERY = '(max-width: 720px)';
           <app-step-rail
             [steps]="store.rail()"
             [highlighted]="store.highlighted()"
-            (select)="store.jumpTo($event)"
+            (select)="onSelectStep($event)"
           />
         </aside>
 
@@ -74,8 +75,8 @@ const NARROW_QUERY = '(max-width: 720px)';
             [isFirst]="store.isFirst()"
             [isLast]="store.isLast()"
             (valueChange)="onValueChange($event)"
-            (next)="store.next()"
-            (back)="store.back()"
+            (next)="onNext()"
+            (back)="onBack()"
           />
 
           <section class="output-region">
@@ -290,11 +291,48 @@ export class AppComponent {
     () => this.store.rail()[this.store.currentIndex()]?.reason ?? null,
   );
 
+  readonly draft = inject(DraftService);
+
   constructor() {
     // A phone gets the content first; the rail is one tap away.
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       this.railOpen.set(!window.matchMedia(NARROW_QUERY).matches);
     }
+
+    // Resume before anything else can write, so a returning visit opens where the
+    // person left instead of on an empty first question.
+    void this.draft.restore();
+
+    if (typeof window !== 'undefined') {
+      // A closed tab is the failure this exists for, and `visibilitychange` is the only
+      // event that reliably fires on mobile before the page goes away.
+      window.addEventListener('beforeunload', () => this.draft.flushPending());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.draft.flushPending();
+        }
+      });
+    }
+  }
+
+  /**
+   * A step change is rare and expensive to lose, so it does not wait for the debounce.
+   * Three separate methods instead of one taking a callback, because an Angular template
+   * cannot evaluate an arrow function.
+   */
+  onNext(): void {
+    this.store.next();
+    void this.draft.saveNow();
+  }
+
+  onBack(): void {
+    this.store.back();
+    void this.draft.saveNow();
+  }
+
+  onSelectStep(index: number): void {
+    this.store.jumpTo(index);
+    void this.draft.saveNow();
   }
 
   toggleRail(): void {
@@ -306,6 +344,7 @@ export class AppComponent {
 
     if (question) {
       this.store.setText(question.id, text);
+      this.draft.saveSoon();
     }
   }
 
