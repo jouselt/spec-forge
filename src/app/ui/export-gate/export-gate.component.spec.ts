@@ -183,6 +183,76 @@ describe('ExportGateComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.warning-row').length).toBeGreaterThan(0);
     expect(buttons().every((button) => button.disabled)).toBe(false);
   });
+
+  it('should disable every export button while the export is blocked', () => {
+    store.setDocs(withInferred(docs()));
+    fixture.detectChanges();
+
+    for (const selector of ['.download-bundle', '.download-zip', '.copy-bundle']) {
+      const button = fixture.nativeElement.querySelector(selector) as HTMLButtonElement;
+
+      expect(button).withContext(selector).not.toBeNull();
+      expect(button.disabled).withContext(selector).toBe(true);
+      expect(button.getAttribute('title')).withContext(selector).toBe(component.verdict());
+    }
+  });
+
+  it('should leave the three export buttons live on a run with nothing blocking', () => {
+    store.generate(completeAnswers());
+    fixture.detectChanges();
+
+    expect(component.result().canExport).toBe(true);
+
+    for (const selector of ['.download-bundle', '.download-zip', '.copy-bundle']) {
+      expect((fixture.nativeElement.querySelector(selector) as HTMLButtonElement).disabled)
+        .withContext(selector)
+        .toBe(false);
+    }
+  });
+
+  it('should save the bundle and the zip under their own names', async () => {
+    store.generate(completeAnswers());
+    fixture.detectChanges();
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:test');
+    spyOn(URL, 'revokeObjectURL');
+
+    (fixture.nativeElement.querySelector('.download-bundle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(component.exportNote()).toBe('Saved spec-bundle.md.');
+
+    await component.downloadZip();
+    fixture.detectChanges();
+
+    expect(component.exportNote()).toBe('Saved spec-bundle.zip.');
+    expect(component.exportFailed()).toBe(false);
+  });
+
+  it('should report a clipboard failure instead of pretending to copy', async () => {
+    store.generate(completeAnswers());
+    fixture.detectChanges();
+    spyOn(navigator.clipboard, 'writeText').and.rejectWith(new Error('Document is not focused.'));
+
+    await component.copyBundle();
+    fixture.detectChanges();
+
+    expect(component.exportFailed()).toBe(true);
+    expect(component.exportNote()).toContain('Document is not focused.');
+    expect(fixture.nativeElement.querySelector('.export-note.is-error')).not.toBeNull();
+  });
+
+  it('should say how much was copied', async () => {
+    store.generate(completeAnswers());
+    fixture.detectChanges();
+    spyOn(navigator.clipboard, 'writeText').and.resolveTo();
+
+    await component.copyBundle();
+    fixture.detectChanges();
+
+    expect(component.exportFailed()).toBe(false);
+    expect(component.exportNote()).toMatch(/^Copied \d+ characters to the clipboard\.$/);
+  });
+
 });
 
 describe('download', () => {

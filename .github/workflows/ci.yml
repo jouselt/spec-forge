@@ -19,3 +19,6 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Reads dist/, so it runs after the build and never builds on its own.
+      - run: node evals/bundle/run.mjs
+      - run: node evals/import/run.mjs

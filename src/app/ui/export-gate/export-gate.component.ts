@@ -3,7 +3,13 @@ import { GeneratedDoc } from '../../core/question-graph';
 import { SpecFile } from '../../core/mapping';
 import { GateResult, evaluate, groupBlocking, verdictLine } from '../../core/gate';
 import { downloadMarkdown } from '../../core/download';
-import { renderMarkdown } from '../../templates/assembly';
+import { RenderOptions, renderMarkdown } from '../../templates/assembly';
+import {
+  bundleMarkdown,
+  copyText,
+  downloadBundle as downloadBundleFile,
+  downloadZip as downloadZipFile,
+} from '../../core/export';
 import { DocumentStore } from '../../state/document-store.service';
 import { SettingsStore } from '../../state/settings.service';
 
@@ -84,6 +90,40 @@ import { SettingsStore } from '../../state/settings.service';
           }
         </tbody>
       </table>
+
+      <div class="export-all">
+        <button
+          type="button"
+          class="download-bundle"
+          [disabled]="!result().canExport"
+          [attr.title]="result().canExport ? 'One file with all three, separated by a marker' : verdict()"
+          (click)="downloadBundle()"
+        >
+          Download bundle
+        </button>
+        <button
+          type="button"
+          class="download-zip"
+          [disabled]="!result().canExport"
+          [attr.title]="result().canExport ? 'A zip with the three files' : verdict()"
+          (click)="downloadZip()"
+        >
+          Download zip
+        </button>
+        <button
+          type="button"
+          class="copy-bundle"
+          [disabled]="!result().canExport"
+          [attr.title]="result().canExport ? 'Copy the bundle to the clipboard' : verdict()"
+          (click)="copyBundle()"
+        >
+          Copy
+        </button>
+      </div>
+
+      @if (exportNote()) {
+        <p class="export-note" [class.is-error]="exportFailed()">{{ exportNote() }}</p>
+      }
 
       @if (result().warnings.length > 0) {
         <ul class="warning-list">
@@ -188,7 +228,9 @@ export class ExportGateComponent {
   private readonly store = inject(DocumentStore);
   readonly settings = inject(SettingsStore);
 
-  readonly lastDownload = signal<string | null>(null);
+  lastDownload = signal<string | null>(null);
+  readonly exportNote = signal<string | null>(null);
+  readonly exportFailed = signal(false);
 
   readonly result = computed<GateResult>(() =>
     evaluate(this.store.docs(), { warnInsteadOfBlock: this.settings.warnInsteadOfBlock() }),
@@ -221,5 +263,52 @@ export class ExportGateComponent {
     });
 
     this.lastDownload.set(downloadMarkdown(file, text));
+  }
+
+  private renderOptions(): RenderOptions {
+    return { markUnreviewedInferred: this.settings.warnInsteadOfBlock() };
+  }
+
+  downloadBundle(): void {
+    if (!this.result().canExport) {
+      return;
+    }
+
+    const name = downloadBundleFile(this.store.docs(), this.renderOptions());
+
+    this.exportFailed.set(false);
+    this.exportNote.set(`Saved ${name}.`);
+  }
+
+  async downloadZip(): Promise<void> {
+    if (!this.result().canExport) {
+      return;
+    }
+
+    try {
+      const name = await downloadZipFile(this.store.docs(), this.renderOptions());
+
+      this.exportFailed.set(false);
+      this.exportNote.set(`Saved ${name}.`);
+    } catch (error) {
+      this.exportFailed.set(true);
+      this.exportNote.set(`The zip failed: ${String(error)}`);
+    }
+  }
+
+  async copyBundle(): Promise<void> {
+    if (!this.result().canExport) {
+      return;
+    }
+
+    try {
+      const copied = await copyText(bundleMarkdown(this.store.docs(), this.renderOptions()));
+
+      this.exportFailed.set(false);
+      this.exportNote.set(`Copied ${copied.length} characters to the clipboard.`);
+    } catch (error) {
+      this.exportFailed.set(true);
+      this.exportNote.set(String(error instanceof Error ? error.message : error));
+    }
   }
 }
