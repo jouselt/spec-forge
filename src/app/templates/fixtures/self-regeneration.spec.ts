@@ -105,11 +105,12 @@ describe('self-regeneration', () => {
       .map((line) => line.trim())
       .filter((line) => line.startsWith('- ['));
 
-    // Measured, not asked for: the template path writes 32 items today and the design asks
-    // for 40 to 90. The floor is the number that exists, so a regression to a shorter list
-    // fails here; the remaining gap needs new template frames and is recorded as an open box
-    // in tasks.md rather than hidden by lowering the bar to nothing.
-    expect(items.length).toBeGreaterThanOrEqual(32);
+    // Measured: 41 items from twelve answers, inside the 40 to 90 the design asks for.
+    // The design asks for 40 to 90 and this fixture produces 41, at the bottom of the band.
+    // Both ends are asserted: a template that stops firing fails the first, and one that
+    // starts padding the list fails the second.
+    expect(items.length).toBeGreaterThanOrEqual(40);
+    expect(items.length).toBeLessThanOrEqual(90);
 
     for (const item of items) {
       expect(item).withContext(item.slice(0, 60)).toMatch(ITEM);

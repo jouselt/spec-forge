@@ -282,6 +282,13 @@ export function buildContext(answers: Answer[]): FrameContext {
   set('constraint_rows', tableRows(constraintEntries), ['q.constraints']);
   addList('constraint_entries', constraintEntries, ['q.constraints']);
 
+  // The risks are read as entries for the same reason the stack is: an answer that names
+  // four risks is four pieces of work, and reading it as one sentence turns four hedges into
+  // one task nobody can close.
+  const riskEntries = listEntries(risk);
+  set('risk_list', bullets(riskEntries), ['q.risk']);
+  addList('risk_entries', riskEntries, ['q.risk']);
+
   // Adaptive answers are measured numbers, so they read as table rows. The label
   // is the checked-in question prompt, verbatim, minus its question mark.
   const hardwareIds = allQuestions()

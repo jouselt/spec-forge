@@ -148,7 +148,6 @@ Named rather than quietly missing:
 - The WebLLM runtime itself. `model/inference.worker.ts` exists, compiles, and resolves the
   library at run time; without the package installed it answers with a sentence instead of a
   stack trace. Installing `@mlc-ai/web-llm` is the whole change.
-- The template path writes 15 items where `tasks.md` asks for 40 to 90.
 - Nothing calls `promoteQuestion` from the UI yet: the interview accepts a promoted question
   and its answer, and the chip that would promote one is parsed, but the button is not
   wired.

@@ -70,7 +70,7 @@
     {
       "id": "q.risk",
       "questionId": "q.risk",
-      "text": "The real risk is trusting a generated sentence because it reads well. The mitigation is structural rather than editorial: provenance on every block, a gate that blocks on unreviewed inferences, snapshots before every regeneration and a diff a person has to accept section by section.",
+      "text": "- Trusting a generated sentence because it reads well\n- Losing an edit when a regeneration replaces a section somebody rewrote\n- A model path that downloads a gigabyte and then cannot run without WebGPU\n- A task list so thin that it reads as a summary instead of work",
       "kind": "longtext",
       "askedAt": 0,
       "source": "base"
