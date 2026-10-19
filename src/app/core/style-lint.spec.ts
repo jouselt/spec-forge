@@ -1,5 +1,5 @@
 import { GeneratedDoc, Block } from './question-graph';
-import { SpecFile } from './mapping';
+
 import { assemble } from '../templates/assembly';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
 import { BANNED_WORDS, EM_DASH } from './banned-words';

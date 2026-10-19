@@ -342,7 +342,7 @@ function readChecklist() {
       return [];
     }
 
-    const [header, ...rows] = raw.split('\n');
+    const [, ...rows] = raw.split('\n');
 
     return rows
       .filter((row) => row.trim())

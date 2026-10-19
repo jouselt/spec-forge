@@ -1,5 +1,4 @@
 import { Block, GeneratedDoc } from './question-graph';
-import { SpecFile } from './mapping';
 import { assemble } from '../templates/assembly';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
 import { evaluate, groupBlocking, verdictLine } from './gate';

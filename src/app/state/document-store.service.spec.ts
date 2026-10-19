@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DocumentStore } from './document-store.service';
 import { SnapshotStore } from './snapshot-store.service';
-import { Answer, Block, OriginKind, narrowOrigin } from '../core/question-graph';
+import { Block, OriginKind, narrowOrigin } from '../core/question-graph';
 import { hasModelOrigin, isPlaceholder, sourceAnswerIds } from '../core/provenance';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
 import { block, doc } from '../ui/fixtures/blocks';

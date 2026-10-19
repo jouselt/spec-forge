@@ -77,10 +77,6 @@ async function load() {
   return { assembly, fixtures };
 }
 
-function countGaps(blocks) {
-  return blocks.filter((block) => block.origin.kind === 'missing').length;
-}
-
 function countByKind(blocks) {
   const counts = { template: 0, missing: 0, model: 0, answer: 0, imported: 0, edited: 0 };
 

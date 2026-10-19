@@ -1,0 +1,12 @@
+{
+  "comment": "The layering rule. core/ and templates/ are pure: they answer the same question the same way every time, with no framework, no storage and no network. Everything that reaches outward lives in state/, persistence/, model/ or ui/.",
+  "pureDirs": ["src/app/core/", "src/app/templates/"],
+  "forbiddenInPure": ["@angular/core", "@angular/common", "@angular/forms", "idb", "@mlc-ai/web-llm"],
+  "why": {
+    "@angular/core": "a pure module that injects or signals cannot be run from a node script, which is how evals/readability, evals/gate and evals/import work",
+    "@angular/common": "same reason as @angular/core",
+    "@angular/forms": "same reason as @angular/core",
+    "idb": "storage belongs behind persistence/, so core/ stays testable without a browser database",
+    "@mlc-ai/web-llm": "a 1 GB model import must never be reachable from the layer that decides what a block says"
+  }
+}
