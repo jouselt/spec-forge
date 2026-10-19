@@ -19,6 +19,7 @@ import { RailStep } from '../../state/wizard-store.service';
               class="rail-button"
               [class.is-current]="step.status === 'current'"
               [class.is-answered]="step.answered"
+              [class.is-highlighted]="highlighted === step.question.id"
               [attr.aria-current]="step.status === 'current' ? 'step' : null"
               [attr.data-step-id]="step.question.id"
               (click)="select.emit(step.index)"
@@ -75,6 +76,11 @@ import { RailStep } from '../../state/wizard-store.service';
         border-left-color: #1a1a1a;
       }
 
+      .rail-button.is-highlighted {
+        border-left-color: var(--color-info);
+        background: var(--color-bg);
+      }
+
       .rail-number {
         min-width: 1.25rem;
         font-size: 0.75rem;
@@ -129,6 +135,10 @@ import { RailStep } from '../../state/wizard-store.service';
 })
 export class StepRailComponent {
   @Input() steps: RailStep[] = [];
+
+  /** Question id to mark, usually the answer a generated block came from. */
+  @Input() highlighted: string | null = null;
+
   @Output() select = new EventEmitter<number>();
 
   stateLabel(step: RailStep): string {

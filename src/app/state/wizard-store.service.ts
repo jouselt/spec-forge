@@ -52,11 +52,15 @@ export class WizardStore {
   private readonly questionList = signal<Question[]>(orderQuestions(BASE_STEPS));
   private readonly traceList = signal<TriggerTrace[]>([]);
   private readonly position = signal(0);
+  private readonly highlight = signal<string | null>(null);
 
   readonly answers = this.answerList.asReadonly();
   readonly questions = this.questionList.asReadonly();
   readonly traces = this.traceList.asReadonly();
   readonly index = this.position.asReadonly();
+
+  /** The answer a caller asked to see, or null when nothing is highlighted. */
+  readonly highlighted = this.highlight.asReadonly();
 
   readonly total = computed(() => this.questionList().length);
   /** The position clamped into the list, so a shrinking list never strands the user. */
@@ -167,6 +171,20 @@ export class WizardStore {
     }
   }
 
+  /**
+   * Jump to the question behind an answer and mark it, so a view can show where
+   * a generated sentence came from. An id that is not part of the interview
+   * marks nothing, so a stale provenance id cannot move the wizard.
+   */
+  highlightAnswer(answerId: string): void {
+    if (!this.questionList().some((question) => question.id === answerId)) {
+      return;
+    }
+
+    this.highlight.set(answerId);
+    this.jumpToQuestion(answerId);
+  }
+
   /** Error message for a question, or null when the answer is acceptable. */
   errorFor(question: Question | null): string | null {
     if (!question) {
@@ -192,6 +210,7 @@ export class WizardStore {
     this.questionList.set(orderQuestions(BASE_STEPS));
     this.traceList.set([]);
     this.position.set(0);
+    this.highlight.set(null);
   }
 
   private reasonFor(question: Question): string | null {

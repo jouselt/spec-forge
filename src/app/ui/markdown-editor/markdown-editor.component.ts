@@ -26,6 +26,7 @@ import { EditorView } from '@codemirror/view';
   styles: [
     `
       .editor {
+        height: 22rem;
         border: 1px solid #d0d0d0;
         border-radius: 4px;
       }
@@ -52,11 +53,15 @@ export class MarkdownEditorComponent implements AfterViewInit, OnChanges, OnDest
       extensions: [
         markdown(),
         EditorView.lineWrapping,
-        // The editor grows with its document instead of scrolling inside a
-        // fixed box.
+        // A definite height, not `auto`. CodeMirror decides how much of the
+        // document to render from the height of its scroller: with a definite
+        // height it measures once and renders the viewport plus a wide margin,
+        // which covers a whole spec file. With `height: auto` the box always
+        // matches whatever it already rendered, so it never learns the document
+        // is longer and silently stops at roughly the first thirty lines.
         EditorView.theme({
-          '&': { height: 'auto', minHeight: '12rem' },
-          '.cm-scroller': { overflow: 'visible' },
+          '&': { height: '22rem' },
+          '.cm-scroller': { overflow: 'auto' },
         }),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged || this.applying) {

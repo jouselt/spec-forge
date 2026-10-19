@@ -2,6 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { QuestionPanelComponent } from './ui/question-panel/question-panel.component';
 import { StepRailComponent } from './ui/step-rail/step-rail.component';
 import { StepStepperComponent } from './ui/step-stepper/step-stepper.component';
+import { BlockListComponent } from './ui/block-list/block-list.component';
+import { OutputTabsComponent } from './ui/output-tabs/output-tabs.component';
+import { ProvenancePanelComponent } from './ui/provenance-panel/provenance-panel.component';
+import { ReviewPanelComponent } from './ui/review-panel/review-panel.component';
+import { DocumentStore } from './state/document-store.service';
 import { WizardStore } from './state/wizard-store.service';
 
 /** Width below which the rail collapses into a toggle, so a phone gets one column. */
@@ -10,7 +15,15 @@ const NARROW_QUERY = '(max-width: 720px)';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [StepRailComponent, QuestionPanelComponent, StepStepperComponent],
+  imports: [
+    StepRailComponent,
+    QuestionPanelComponent,
+    StepStepperComponent,
+    OutputTabsComponent,
+    ProvenancePanelComponent,
+    ReviewPanelComponent,
+    BlockListComponent,
+  ],
   template: `
     <div class="app-container">
       <header class="app-header">
@@ -36,7 +49,11 @@ const NARROW_QUERY = '(max-width: 720px)';
 
       <div class="app-layout">
         <aside class="step-rail" id="step-rail" [class.is-hidden]="!railOpen()">
-          <app-step-rail [steps]="store.rail()" (select)="store.jumpTo($event)" />
+          <app-step-rail
+            [steps]="store.rail()"
+            [highlighted]="store.highlighted()"
+            (select)="store.jumpTo($event)"
+          />
         </aside>
 
         <main class="content-region">
@@ -54,6 +71,38 @@ const NARROW_QUERY = '(max-width: 720px)';
             (next)="store.next()"
             (back)="store.back()"
           />
+
+          <section class="output-region">
+            <div class="output-bar">
+              <button
+                type="button"
+                class="generate"
+                [disabled]="!canGenerate()"
+                (click)="generate()"
+              >
+                {{ outputOpen() ? 'Generate again' : 'Generate the spec' }}
+              </button>
+
+              @if (outputOpen()) {
+                <button type="button" class="hide-output" (click)="hideOutput()">
+                  Hide the output
+                </button>
+              }
+
+              <span class="output-note">
+                Nothing is inferred on this path: every block names the answers it read.
+              </span>
+            </div>
+
+            @defer (when outputOpen()) {
+              <div class="output-body">
+                <app-output-tabs />
+                <app-provenance-panel />
+                <app-review-panel />
+                <app-block-list />
+              </div>
+            }
+          </section>
         </main>
       </div>
 
@@ -140,6 +189,43 @@ const NARROW_QUERY = '(max-width: 720px)';
         padding: 2rem;
       }
 
+      .output-region {
+        margin-top: 1.5rem;
+        border-top: 1px solid #e4e4e4;
+        padding-top: 1rem;
+      }
+
+      .output-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .output-bar button {
+        font: inherit;
+        font-size: 0.875rem;
+        padding: 0.35rem 0.9rem;
+        cursor: pointer;
+      }
+
+      .output-bar button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .output-note {
+        font-size: 0.8125rem;
+        color: #555;
+      }
+
+      .output-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
       @media (max-width: 720px) {
         .app-header {
           padding: 1rem;
@@ -174,7 +260,14 @@ const NARROW_QUERY = '(max-width: 720px)';
 export class AppComponent {
   readonly title = 'spec-forge';
   readonly store = inject(WizardStore);
+  readonly docs = inject(DocumentStore);
   readonly railOpen = signal(true);
+
+  /** True once the output has been generated at least once. */
+  readonly outputOpen = signal(false);
+
+  /** Generating with no answers would only produce gaps, so the button waits. */
+  readonly canGenerate = computed(() => this.store.answeredCount() > 0);
 
   /** The stored text for the current question, so a control re-renders its value. */
   readonly currentText = computed(() => {
@@ -205,5 +298,18 @@ export class AppComponent {
     if (question) {
       this.store.setText(question.id, text);
     }
+  }
+
+  /**
+   * Assemble the three files from the answers and show them. The template path
+   * is the default, so this hands the store the answers and no model is loaded.
+   */
+  generate(): void {
+    this.docs.generate(this.store.snapshot());
+    this.outputOpen.set(true);
+  }
+
+  hideOutput(): void {
+    this.outputOpen.set(false);
   }
 }
