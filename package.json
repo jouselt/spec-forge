@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "ng test --watch=false --browsers=ChromeHeadless --code-coverage",
     "test:watch": "ng test",
+    "lint:specs": "node evals/style/run.mjs",
     "eval:readability": "node evals/readability/run.mjs",
     "eval:readability:score": "node evals/readability/run.mjs --score",
     "prepare": "husky install"
