@@ -57,13 +57,13 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 5: Output editor, provenance panel, review
 
-- [ ] `[G]` `OutputTabsComponent`: three tabs (proposal, design, tasks), one `MarkdownEditorComponent` per tab; test switching tabs preserves each editor's content and that a one-character edit sets `origin.kind = 'edited'` and `review = 'edited'`
-- [ ] `[G]` `MarkdownEditorComponent` wrapping CodeMirror 6 with `@codemirror/lang-markdown`; `[value]` input and `(valueChange)` output; test a programmatically set value appears and an edit emits
-- [ ] `[G]` `ProvenancePanelComponent`: per-file counts by origin kind plus the block total; test a fixture with 18 blocks over 4 kinds renders all counts and they sum to 18
-- [ ] `[G]` Clicking a sourced block scrolls to and highlights the answer that produced it; test the highlight class lands on the right `AnswerId`
-- [ ] `[G]` `ReviewPanelComponent`: one row per inferred block with Confirm, Edit, Reject; test the three actions set `confirmed`, `edited`, `rejected`, and that rejecting leaves the heading with a gap and no text
-- [ ] `[G]` Inferred blocks render with a distinct background and a "model-inferred" badge; test the class is present on inferred rows and absent on sourced rows
-- [ ] `[M]` Complete a full interview with no model loaded and confirm zero inferred blocks appear
+- [x] `[G]` `OutputTabsComponent`: three tabs (proposal, design, tasks), one `MarkdownEditorComponent` per **block** under its section heading, only the active file mounted; test that no editor ever holds a whole file and that an edit sets `origin.kind = 'edited'` and `review = 'edited'` on its own block. Per block, not per file: CodeMirror renders only the window of lines that fits its box and leaves a `cm-gap` for the rest, which made the tail of a generated file unreachable (measured: 29 of about 40 lines for `proposal.md` in Chrome 155). A block is a line or two, so the window always covers it.
+- [x] `[G]` `MarkdownEditorComponent` wrapping CodeMirror 6 with `@codemirror/lang-markdown`; `[value]` input and `(valueChange)` output; test a programmatically set value appears and an edit emits
+- [x] `[G]` `ProvenancePanelComponent`: per-file counts by origin kind plus the block total; test a fixture with 18 blocks over 4 kinds renders all counts and they sum to 18
+- [x] `[G]` Clicking a sourced block scrolls to and highlights the answer that produced it; test the highlight class lands on the right `AnswerId`
+- [x] `[G]` `ReviewPanelComponent`: one row per inferred block with Confirm, Edit, Reject; test the three actions set `confirmed`, `edited`, `rejected`, and that rejecting leaves the heading with a gap and no text
+- [x] `[G]` Inferred blocks render with a distinct background and a "model-inferred" badge; test the class is present on inferred rows and absent on sourced rows
+- [x] `[M]` Complete a full interview with no model loaded and confirm zero inferred blocks appear
 
 ## Phase 6: Validation, style lint, export gate
 
