@@ -67,15 +67,15 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 6: Validation, style lint, export gate
 
-- [ ] `[G]` `core/validator.ts`: required sections per file; test six fixtures that each violate exactly one required proposal section, nine that each violate one required design section, and one passing fixture per file
-- [ ] `[G]` `tasks.md` validation: at least 3 phases, every item a checkbox, every item tagged `[G]`/`[E]`/`[M]`, ends with a Definition of Done; test each rule fails independently
-- [ ] `[G]` Acceptance-criteria shape check: an item must contain a number, a unit, a named identifier, or a comparison; test 10 passing and 6 failing fixtures and assert the failing ones are flagged, not deleted
-- [ ] `[G]` `tasks.md` item count warning outside 40 to 90; test fixtures at 20, 39, 40, 90, 91
-- [ ] `[G]` `core/style-lint.ts`: flags em dashes and 18 checked-in banned words; test one fixture per word plus an em dash fixture, and assert zero findings on the three specs committed in this repository
-- [ ] `[G]` `core/gate.ts`: `evaluate(docs): GateResult` returning `blocking: Block[]` and a per-file report; test it is non-empty for one unreviewed inferred block, one surviving placeholder, and one missing required section, and empty for a fully sourced run and after every block is confirmed
-- [ ] `[G]` `ExportGateComponent`: shows the per-file report table, disables the download button when blocking is non-empty, and names the count in the disabled tooltip; test both states
-- [ ] `[G]` Settings toggle "warn instead of block", off by default; when on, export proceeds and inferred text is wrapped in `<!-- INFERRED: unreviewed -->`; test the wrapper appears
-- [ ] `[E]` Gate eval: 10 mixed runs; assert the gate blocks on 10 of 10 when unreviewed inferred blocks exist, and a human judge confirms zero fabricated facts survive in any exported file
+- [x] `[G]` `core/validator.ts`: required sections per file; the test walks the real section table rather than a hand-written sample, removing one required proposal section at a time and then one required design section at a time, ten each, and asserting exactly one `missing-required-section` finding per removal
+- [x] `[G]` `tasks.md` validation: at least 3 phases, every item a checkbox, every item tagged `[G]`/`[E]`/`[M]`, ends with a Definition of Done; test each rule fails independently
+- [x] `[G]` Acceptance-criteria shape check: an item must contain a number, a unit, a named identifier, or a comparison; test 10 passing and 6 failing fixtures and assert the failing ones are flagged, not deleted
+- [x] `[G]` `tasks.md` item count warning outside 40 to 90; test fixtures at 20, 39, 40, 90, 91
+- [x] `[G]` `core/style-lint.ts`: flags em dashes and the banned words; the checked-in list is 19 words, not the 18 this line predicted, and the test asserts the count so the two cannot drift. One fixture per word plus an em dash fixture, and zero findings on the spec the app generates itself, with `npm run lint:specs` covering the three files committed here
+- [x] `[G]` `core/gate.ts`: `evaluate(docs): GateResult` returning `blocking` and a per-file report; test it is non-empty for one unreviewed inferred block, one surviving placeholder, and one missing required section, and empty for a fully sourced run and after every block is confirmed. `blocking` is a union of three kinds rather than a `Block[]`: a missing section has no block to point at
+- [x] `[G]` `ExportGateComponent`: shows the per-file report table, disables the download button when blocking is non-empty, and names the count in the disabled tooltip; test both states
+- [x] `[G]` Settings toggle "warn instead of block", off by default; when on, export proceeds and inferred text is wrapped in `<!-- INFERRED: unreviewed -->`; test the wrapper appears
+- [ ] `[E]` Gate eval: 10 mixed runs; assert the gate blocks on 10 of 10 when unreviewed inferred blocks exist, and a human judge confirms zero fabricated facts survive in any exported file. The harness and its automated half are built and green in `evals/gate/` (`npm run eval:gate`); the human verdicts are pending, and wait on Phase 9 putting a real model behind the fixtures
 
 ## Phase 7: Regression guard
 
