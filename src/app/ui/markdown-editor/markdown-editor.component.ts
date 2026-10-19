@@ -26,7 +26,6 @@ import { EditorView } from '@codemirror/view';
   styles: [
     `
       .editor {
-        height: 22rem;
         border: 1px solid #d0d0d0;
         border-radius: 4px;
       }
@@ -53,14 +52,15 @@ export class MarkdownEditorComponent implements AfterViewInit, OnChanges, OnDest
       extensions: [
         markdown(),
         EditorView.lineWrapping,
-        // A definite height, not `auto`. CodeMirror decides how much of the
-        // document to render from the height of its scroller: with a definite
-        // height it measures once and renders the viewport plus a wide margin,
-        // which covers a whole spec file. With `height: auto` the box always
-        // matches whatever it already rendered, so it never learns the document
-        // is longer and silently stops at roughly the first thirty lines.
+        // A bounded box, sized to its content up to a ceiling. CodeMirror
+        // renders the lines that fit the box plus a wide margin, and leaves a
+        // `cm-gap` for anything beyond it, so the box must be big enough for the
+        // whole document. Every caller here edits one block, which is a line or
+        // two, so the ceiling is never reached and nothing is ever gapped. An
+        // unbounded box has the opposite failure: it grows to whatever was
+        // rendered and never learns the document is longer.
         EditorView.theme({
-          '&': { height: '22rem' },
+          '&': { minHeight: '3rem', maxHeight: '14rem' },
           '.cm-scroller': { overflow: 'auto' },
         }),
         EditorView.updateListener.of((update) => {

@@ -37,25 +37,7 @@ describe('OutputTabsComponent', () => {
       .map((debug) => debug.nativeElement as HTMLElement);
   }
 
-  /** What one editor shows, as the user sees it. */
-  function editorText(index: number): string {
-    const element = editorElements()[index];
-
-    if (!element) {
-      throw new Error(`No editor at ${index}`);
-    }
-
-    return Array.from(element.querySelectorAll('.cm-line'))
-      .map((line) => line.textContent ?? '')
-      .join('\n');
-  }
-
-  /**
-   * What one editor holds, read from the editor itself rather than from the
-   * rendered lines. CodeMirror renders only the lines inside its measured
-   * viewport, and in a headless test that measurement is not deterministic, so
-   * the document is the reliable answer to "what does this editor show".
-   */
+  /** What one editor holds, read from the editor rather than from the DOM. */
   function editorDoc(index: number): string {
     const element = editorElements()[index];
 
@@ -72,10 +54,22 @@ describe('OutputTabsComponent', () => {
     return view.state.doc.toString();
   }
 
-  function rendered(file: Block['file']): string {
-    const doc = store.docs().find((candidate) => candidate.file === file);
+  function editorForBlock(id: string): MarkdownEditorComponent {
+    const debug = fixture.debugElement
+      .queryAll(By.directive(MarkdownEditorComponent))
+      .find((candidate) => (candidate.nativeElement as HTMLElement).closest(`[data-block-id="${id}"]`));
 
-    return doc ? renderMarkdown(doc) : '';
+    if (!debug) {
+      throw new Error(`No editor for block ${id}`);
+    }
+
+    return debug.componentInstance as MarkdownEditorComponent;
+  }
+
+  function headings(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.section-heading') as NodeListOf<HTMLElement>,
+    ).map((heading) => heading.textContent?.trim() ?? '');
   }
 
   function selectTab(label: string): void {
@@ -87,16 +81,6 @@ describe('OutputTabsComponent', () => {
 
     button.click();
     fixture.detectChanges();
-  }
-
-  /** Insert one character inside a block's text, the smallest real edit there is. */
-  function oneCharacterEdit(file: Block['file'], index: number): { next: string; text: string } {
-    const block = store.blocksFor(file)[index];
-    const before = rendered(file);
-    const at = before.indexOf(block.text) + 3;
-    const next = `${before.slice(0, at)}X${before.slice(at)}`;
-
-    return { next, text: `${block.text.slice(0, 3)}X${block.text.slice(3)}` };
   }
 
   beforeEach(async () => {
@@ -123,16 +107,6 @@ describe('OutputTabsComponent', () => {
     expect(tabPanels().length).toBe(3);
   });
 
-  it('should render one editor per tab, each showing its own file', () => {
-    expect(editors().length).toBe(3);
-
-    for (const [index, file] of (['proposal', 'design', 'tasks'] as Block['file'][]).entries()) {
-      expect(editorDoc(index).trimEnd()).toBe(rendered(file).trimEnd());
-      // The DOM really is showing this file, not just holding it.
-      expect(editorText(index)).toContain(rendered(file).split('\n')[0]);
-    }
-  });
-
   it('should open on the proposal tab', () => {
     expect(tabPanels()[0].hidden).toBe(false);
     expect(tabPanels()[1].hidden).toBe(true);
@@ -150,81 +124,86 @@ describe('OutputTabsComponent', () => {
     expect(tabButtons()[0].getAttribute('aria-selected')).toBe('false');
   });
 
-  it('should keep every editor content when switching tabs', () => {
-    const proposal = editorText(0);
-    const design = editorText(1);
-    const tasks = editorText(2);
-
-    selectTab('tasks');
-    selectTab('design');
-    selectTab('proposal');
-
-    expect(editors().length).toBe(3);
-    expect(editorText(0)).toBe(proposal);
-    expect(editorText(1)).toBe(design);
-    expect(editorText(2)).toBe(tasks);
+  it('should render one editor per block of the active file', () => {
+    expect(editors().length).toBe(store.blocksFor('proposal').length);
   });
 
-  it('should mark the block behind a one character edit as edited', () => {
+  it('should hold exactly one block per editor, never a whole file', () => {
+    const blocks = store.blocksFor('proposal');
+    const wholeFile = renderMarkdown(store.docs()[0]);
+
+    expect(blocks.length).toBeGreaterThan(1);
+
+    blocks.forEach((block, index) => {
+      expect(editorDoc(index)).toBe(block.text);
+      expect(editorDoc(index)).not.toBe(wholeFile);
+    });
+  });
+
+  it('should group the editors under their section heading, in document order', () => {
+    const sections = store.blocksFor('proposal').map((block) => block.section);
+    const distinct = sections.filter((section, index) => sections.indexOf(section) === index);
+
+    expect(headings()).toEqual(distinct);
+  });
+
+  it('should show the origin kind of every block', () => {
+    const kinds = Array.from(
+      fixture.nativeElement.querySelectorAll('.block-kind') as NodeListOf<HTMLElement>,
+    ).map((node) => node.getAttribute('data-kind'));
+
+    expect(kinds).toEqual(store.blocksFor('proposal').map((block) => block.origin.kind));
+  });
+
+  it('should mark the block behind an edit as edited', () => {
     const before = store.blocksFor('proposal')[0];
     const others = store.blocksFor('proposal').slice(1);
     const design = store.blocksFor('design');
-    const { next, text } = oneCharacterEdit('proposal', 0);
 
-    editors()[0].valueChange.emit(next);
+    editorForBlock(before.id).valueChange.emit(`${before.text} Plus one more sentence.`);
     fixture.detectChanges();
 
     const after = store.blocksFor('proposal')[0];
     const edited = narrowOrigin(after.origin, 'edited');
 
     expect(after.id).toBe(before.id);
-    expect(after.text).toBe(text);
+    expect(after.text).toBe(`${before.text} Plus one more sentence.`);
     expect(after.review).toBe('edited');
-    expect(edited).not.toBeNull();
     expect(edited?.derivedFrom).toEqual(before.origin);
-  });
-
-  it('should leave the other blocks and the other files alone', () => {
-    const others = store.blocksFor('proposal').slice(1);
-    const design = store.blocksFor('design');
-    const { next } = oneCharacterEdit('proposal', 0);
-
-    editors()[0].valueChange.emit(next);
-    fixture.detectChanges();
-
     expect(store.blocksFor('proposal').slice(1)).toEqual(others);
     expect(store.blocksFor('design')).toEqual(design);
-    expect(store.totalBlocks()).toBe(store.docs().reduce((total, doc) => total + doc.blocks.length, 0));
-  });
-
-  it('should show the edit after the store takes it', () => {
-    const { next, text } = oneCharacterEdit('tasks', 0);
-
-    selectTab('tasks');
-    editors()[2].valueChange.emit(next);
-    fixture.detectChanges();
-
-    expect(editorDoc(2)).toContain(text);
-    expect(editorDoc(2).trimEnd()).toBe(rendered('tasks').trimEnd());
-  });
-
-  it('should ignore an edit that belongs to no block', () => {
-    const before = store.docs();
-    // Position zero is the section heading, which no block owns.
-    const next = `X${rendered('proposal')}`;
-
-    editors()[0].valueChange.emit(next);
-    fixture.detectChanges();
-
-    expect(store.docs()).toEqual(before);
   });
 
   it('should ignore an edit that changes nothing', () => {
     const before = store.docs();
+    const block: Block = store.blocksFor('proposal')[0];
 
-    editors()[0].valueChange.emit(rendered('proposal'));
+    editorForBlock(block.id).valueChange.emit(block.text);
     fixture.detectChanges();
 
     expect(store.docs()).toEqual(before);
+  });
+
+  it('should keep an edit when the user leaves the tab and comes back', () => {
+    const block = store.blocksFor('proposal')[0];
+
+    editorForBlock(block.id).valueChange.emit('Rewritten by hand.');
+    fixture.detectChanges();
+
+    selectTab('tasks');
+    expect(editors().length).toBe(store.blocksFor('tasks').length);
+
+    selectTab('proposal');
+
+    expect(store.blocksFor('proposal')[0].text).toBe('Rewritten by hand.');
+    expect(editorDoc(0)).toBe('Rewritten by hand.');
+  });
+
+  it('should render no editors before a generate', () => {
+    store.setDocs([]);
+    fixture.detectChanges();
+
+    expect(editors().length).toBe(0);
+    expect(headings()).toEqual([]);
   });
 });
