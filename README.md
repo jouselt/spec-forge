@@ -9,7 +9,7 @@ A 100% client-side Angular 20.3 app that interviews users about an idea and prod
 
 ## Status
 
-**The interview is built, and so is the no-model generation path end to end.** Finish the interview, press Generate, and the three files appear with every block tagged by where it came from, a review panel for anything a model wrote, and one editor per block. The model path, the export gate, snapshots and download are not built.
+**The interview is built, and so is the no-model generation path end to end.** Finish the interview, press Generate, and the three files appear with every block tagged by where it came from, a review panel for anything a model wrote, one editor per block, and an export gate that refuses to hand over a file while anything is unreviewed or unanswered. The model path, snapshots, the bundle and the zip are not built.
 
 Working today:
 
@@ -18,18 +18,22 @@ Working today:
 - `core/triggers.ts`: the ten-trigger table and `evaluateTriggers`, including retraction when a keyword is removed
 - `core/mapping.ts`: the checked-in answer-to-section table, with both heading spellings accepted
 - `core/provenance.ts`: block tagging, so every block names the answer it came from or is a marked gap
+- `core/validator.ts`: required sections, surviving gaps, the acceptance-criterion shape rule, and the four `tasks.md` rules, split into what blocks an export and what is worth a warning
+- `core/style-lint.ts` and `core/banned-words.json`: the em dash and the 19 banned words, one finding per rule per block
+- `core/gate.ts`: three documents in, one decision out, with a per-file report
 - `templates/`: `frame.ts`, the three template modules, and `assembly.ts`, which turns answers into blocks with no model
 - `state/wizard-store.service.ts`: the answers, the question list derived from them, the position, validation, and the answer a block came from
 - `state/document-store.service.ts`: the generated documents, the generate action, block text edits, and the confirm, edit and reject review transitions
 - `state/trigger-reason.ts`: the "Asked because you mentioned {phrase} in step {step}" sentence
-- `ui/`: the question panel, the step rail, the step-stepper footer, six controls, the output tabs with one CodeMirror per block, the provenance panel, the review panel and the block list with click-to-source
-- `npm run typecheck`, `npm run build`, and `npm test` (362 specs) pass
-- `npm run eval:readability` assembles five real answer sets into `evals/readability/out/` for the human rating
+- `ui/`: the question panel, the step rail, the step-stepper footer, six controls, the output tabs with one CodeMirror per block, the provenance panel, the review panel, the block list with click-to-source, and the export gate
+- `npm run typecheck`, `npm run build`, and `npm test` (410 specs) pass
+- `npm run lint:specs` holds the three specs in this repository to the same style rules the app enforces, and runs in CI
+- `npm run eval:readability` and `npm run eval:gate`, each with a half a machine cannot do
 - `docker compose up` serves the app
 
-Not built yet: the validation and export gate, the model path, persistence, snapshots, and download. The UI shows the generated spec but nothing downloads it yet.
+Not built yet: the model path, persistence, snapshots, and the bundle plus zip export. A single file downloads; three files at once and a clipboard copy do not.
 
-`tasks.md` carries the phase list. Phases 1 to 5 are implemented, and their boxes are ticked where the code exists. Two boxes stay open: the readability eval in Phase 4 and the lint plus under-2s gate in Phase 1, both of which need a person or a tool that is not there yet.
+`tasks.md` carries the phase list. Phases 1 to 5 are closed and Phase 6 is closed except its eval. Three boxes stay open, and all three need a person: the readability eval in Phase 4, the lint plus under-2s gate in Phase 1, and the human verdicts of the gate eval in Phase 6.
 
 ## Quick Start
 
