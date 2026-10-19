@@ -18,8 +18,16 @@ evals/readability/.build/
 evals/readability/out/
 evals/readability/fixtures.json
 
+# Gate eval scratch: the compiled copy and the generated runs. `checklist.csv`
+# is tracked, because it is the sheet the human fills in.
+evals/gate/.build/
+evals/gate/out/
+evals/import/.build/
+evals/import/out/
+
 # Local runtime state
 .atl/
+.engram/
 pids
 *.pid
 *.pid.lock

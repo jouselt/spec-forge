@@ -64,11 +64,13 @@ src/app/
     provenance.ts          block tagging helpers                                done
                            (Origin, Block and ReviewState live in
                            question-graph.ts; this is the tagging layer)
-    validator.ts           required sections, acceptance-criteria shape, style   planned
-    gate.ts                export gate evaluation                              planned
-    diff.ts                line-level diff and section-level apply             planned
-    style-lint.ts          em dash + banned word check                         planned
-    export.ts              blob building, bundle concatenation, zip            planned
+    validator.ts           required sections, acceptance-criteria shape         done
+    banned-words.ts        the 19 banned words and the em dash, from JSON      done
+    gate.ts                export gate evaluation and the per-file report      done
+    diff.ts                line-level diff and section-level apply             done
+    style-lint.ts          em dash + banned word check                         done
+    download.ts            one markdown blob per file                         done
+    export.ts              bundle concatenation, zip                          planned
   templates/
     frame.ts               frame vocabulary, tokens, shape patterns            done
     proposal.tpl.ts        section frames for proposal.md                      done
@@ -86,7 +88,9 @@ src/app/
     wizard-store.service.ts  signals: answers, questions, traces, index; rail and totals  done
     trigger-reason.ts        the follow-up reason sentence                     done
     review-store.ts        per-block review state                             planned
-    snapshot-store.ts      versioned generated docs, locks, restore            planned
+    snapshot-store.ts      versioned docs, both markdown and blocks           done
+    import-spec.ts         parse a pasted markdown file into locked blocks     done
+    merge.ts               generation meets locked text, section by section    done
   persistence/
     spec-db.ts             idb schema and migrations                           planned
     autosave.ts            debounced writer                                    planned
@@ -96,7 +100,8 @@ src/app/
     step-stepper/          segment row plus the "N out of M" footer             done
     controls/              text, longtext, number, choice, list, table          done
     review-panel/  output-tabs/  provenance-panel/  diff-review/
-    model-bar/  export-gate/  style-lint-panel/                              planned
+    snapshot-panel/  export-gate/                                            done
+    model-bar/  style-lint-panel/                                          planned
 ```
 
 No NgRx. One store with a few signals covers it; a store library would add indirection without solving anything this app has.
@@ -407,7 +412,7 @@ The fourth guard is the direct answer to the incident that motivated the project
 - `tasks.md` item count falls in 40 to 90. Outside that range the UI warns that the spec is probably too thin or too granular. Measured range across the three deepest existing specs: 63, 76, 77.
 - No `{{MISSING: ...}}` survives in a file marked ready.
 
-**Style (planned).** `style-lint.ts` will flag em dashes and each word on a checked-in list in `core/banned-words.ts`. Neither file exists today, and no lint runs in CI: `.github/workflows/ci.yml` runs `npm ci`, `npm run typecheck`, `npm test` and `npm run build`. The three specs committed here are clean of em dashes and of the usual AI vocabulary by hand, not by a check. The intent stands: once the list is checked in, the app is held to the same rules as the repo it lives in.
+**Style (built).** `style-lint.ts` flags em dashes and each word in `core/banned-words.json`, and `gate.ts` reports the findings per block without blocking on them. The list is 19 words, the ones this repository's own style rule bans; it lives in JSON so the app and `evals/style/run.mjs` read the same bytes. The stem drops a trailing `e` before the suffixes, so the `-ing` form of an e-final word is caught, and derived adverbs are a different word and are left alone. `npm run lint:specs` reads the three specs committed here and is wired into `.github/workflows/ci.yml`, so the app is held to the same rules as the repo it lives in: proven by appending a line to this file with an em dash and one word from the list, which produced 2 findings and exit 1, and by this paragraph tripping the check before it was reworded.
 
 **The gate.** `gate.ts` reduces the three documents to one decision:
 

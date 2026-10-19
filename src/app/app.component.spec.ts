@@ -1,5 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { DocumentStore } from './state/document-store.service';
 import { WizardStore } from './state/wizard-store.service';
 
 describe('AppComponent', () => {
@@ -277,6 +279,97 @@ describe('AppComponent', () => {
 
       expect(segments().length).toBe(9);
       expect(count()).toBe('7 out of 9');
+    });
+  });
+
+  describe('the output', () => {
+    let docs: DocumentStore;
+
+    function generateButton(): HTMLButtonElement {
+      return fixture.nativeElement.querySelector('.generate') as HTMLButtonElement;
+    }
+
+    function answerEverything(): void {
+      for (const question of store.questions()) {
+        store.setText(question.id, answerFor(question));
+      }
+
+      fixture.detectChanges();
+    }
+
+    /**
+     * Click generate and wait for the deferred output block. The output sits
+     * behind @defer so CodeMirror stays out of the initial bundle, so its
+     * dependencies load asynchronously and the panels are not there yet on the
+     * same tick.
+     */
+    async function generateAndRender(): Promise<void> {
+      generateButton().click();
+      fixture.detectChanges();
+
+      const blocks = await fixture.getDeferBlocks();
+      await Promise.all(blocks.map((block) => block.render(DeferBlockState.Complete)));
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+      docs = TestBed.inject(DocumentStore);
+    });
+
+    it('should refuse to generate before anything is answered', () => {
+      expect(generateButton().disabled).toBe(true);
+
+      answerEverything();
+
+      expect(generateButton().disabled).toBe(false);
+    });
+
+    it('should assemble the three files from the answers and reveal the panels', async () => {
+      answerEverything();
+
+      await generateAndRender();
+
+      expect(docs.docs().map((generated) => generated.file)).toEqual([
+        'proposal',
+        'design',
+        'tasks',
+      ]);
+      expect(docs.docs().every((generated) => generated.path === 'template')).toBe(true);
+      expect(component.outputOpen()).toBe(true);
+
+      expect(fixture.nativeElement.querySelectorAll('.tab-button').length).toBe(3);
+      expect(fixture.nativeElement.querySelector('app-provenance-panel')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('app-review-panel')).not.toBeNull();
+      expect(fixture.nativeElement.querySelector('app-block-list')).not.toBeNull();
+    });
+
+    it('should infer nothing on the template path', async () => {
+      answerEverything();
+
+      await generateAndRender();
+
+      // The block list is mounted, so a missing badge is evidence, not an unrendered panel.
+      expect(fixture.nativeElement.querySelectorAll('.block-row').length).toBeGreaterThan(0);
+      expect(fixture.nativeElement.querySelector('.model-inferred')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.block-row.is-inferred')).toBeNull();
+    });
+
+    it('should hide the output without losing it', async () => {
+      answerEverything();
+
+      await generateAndRender();
+
+      (fixture.nativeElement.querySelector('.hide-output') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(component.outputOpen()).toBe(false);
+      // The panels themselves are not asserted gone: the test renders the
+      // deferred block by hand, which takes it out of the `when` trigger's
+      // control for the rest of the test. What the app owns is the state and
+      // the button, and the files survive the hide.
+      expect(fixture.nativeElement.querySelector('.hide-output')).toBeNull();
+      expect(generateButton().textContent?.trim()).toBe('Generate the spec');
+      expect(docs.docs().length).toBe(3);
     });
   });
 });

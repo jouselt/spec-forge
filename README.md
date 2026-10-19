@@ -1,38 +1,99 @@
 # spec-forge
 
-[![Deploy to GitHub Pages](https://github.com/jouselt/spec-forge/actions/workflows/pages.yml/badge.svg)](https://github.com/jouselt/spec-forge/actions/workflows/pages.yml)
-[![CI](https://github.com/jouselt/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/jouselt/spec-forge/actions/workflows/ci.yml)
+A 100% client-side Angular 20.3 app that interviews you about a project and writes three
+markdown files: `proposal.md`, `design.md`, `tasks.md`. No backend, no API key, no account.
 
-**[Open the live build](https://jouselt.github.io/spec-forge/)** (the interview wizard is live; the generation path behind it is not wired into the UI yet).
+Interview first, generate second, never invent.
 
-A 100% client-side Angular 20.3 app that interviews users about an idea and produces three markdown files with no model involved: `proposal.md`, `design.md`, `tasks.md`. Interview first, generate second, never invent.
+## What it does
 
-## Status
+Nine base questions, plus follow-up questions that fire when an answer mentions something
+specific. Every answer becomes part of the three files, and every block in those files says
+where it came from. Nothing is written that cannot be traced.
 
-**The interview is built, and so is the no-model generation path.** This repository holds the core types, the nine base questions, the ten adaptive triggers, the signal store, the interview UI, and the mapping, provenance and template assembly that turn answers into the three files. The model path and the export gate are not built.
+**Nothing about this app needs a model.** The default path assembles the files from your
+answers with templates, and it produces complete documents with zero inferred blocks. The
+optional model path shapes the same answers into prose and then has to prove every sentence
+against them before the output is used.
 
-Working today:
+## The provenance model
 
-- `core/question-graph.ts`: the core types (Answer, Question, Block, Origin) and three helpers
-- `core/steps.ts`: the nine base questions, with the step 5 proof check
-- `core/triggers.ts`: the ten-trigger table and `evaluateTriggers`, including retraction when a keyword is removed
-- `core/mapping.ts`: the checked-in answer-to-section table, with both heading spellings accepted
-- `core/provenance.ts`: block tagging, so every block names the answer it came from or is a marked gap
-- `templates/`: `frame.ts`, the three template modules, and `assembly.ts`, which turns answers into blocks with no model
-- `state/wizard-store.service.ts`: the answers, the question list derived from them, the position, and validation
-- `state/trigger-reason.ts`: the "Asked because you mentioned {phrase} in step {step}" sentence
-- `ui/`: the question panel, the step rail, the step-stepper footer, and six controls (text, longtext, number, choice, list, table)
-- `npm run typecheck`, `npm run build`, and `npm test` (299 specs) pass
-- `npm run eval:readability` assembles five real answer sets into `evals/readability/out/` for the human rating
-- `docker compose up` serves the app
+One record per block, `origin.kind`, one of six:
 
-Not built yet: the validation and export gate, the model path, and persistence. Nothing in the UI writes a spec file yet; the assembly runs in tests and in the eval harness.
+- **answer**: the text came from an answer you gave by name, and the block stores which
+  answers it cites.
+- **template**: the sentence is a frame filled from answers, so it cannot claim more than
+  they do.
+- **model**: a model wrote it. New model prose starts `review = 'unreviewed'`, and an
+  unreviewed inferred block is what the export gate blocks on.
+- **imported**: the text was yours before this app saw it. Imported blocks are locked and a
+  regeneration may not touch them.
+- **edited**: you changed a block after it was generated, so the record says so.
+- **missing**: a question the interview has not answered yet.
 
-`tasks.md` carries the phase list. Phases 1 to 4 are implemented, and their boxes are ticked where the code exists. Phase 4's last box is the readability eval, which needs a person to rate the generated proposals.
+The interface, the export gate, the diff and the snapshots all read that field. There is no
+second place where "where did this come from" is answered.
 
-## Quick Start
+## The export gate
 
-The fastest path needs nothing but Docker. There is no backend, no database, and no API key, so there is nothing to configure.
+The gate decides whether the three files may be handed over, and it always shows the reason.
+It blocks on three things:
+
+- an inferred block nobody has reviewed, because a guess that reads well is the failure this
+  tool exists to prevent;
+- a surviving `{{MISSING: ...}}` placeholder, because a visible hole is honest and an export
+  with a hole in it is not;
+- a missing required section.
+
+The safest path is also the fastest one: complete the interview, press Generate, and the
+gate has nothing to block on. Warnings that do not block (a banned word, a short acceptance
+criterion) are listed without disabling anything, and a setting switches the block into a
+warning that marks the text instead of stopping the export.
+
+## The four regression guards
+
+One failure, four mechanisms, because one was not enough. The incident: a regeneration
+replaced a document wholesale, so the paragraph a person had rewritten by hand came back in
+the model's words, and nothing on screen said so.
+
+- **Snapshots.** Written before every generation and every import, holding both the rendered
+  files and the structured blocks, because markdown alone cannot restore provenance.
+- **Diff before apply.** A regeneration is proposed, never applied: the diff lists the
+  sections it would change and a person accepts or rejects each one. A locked section is
+  shown and cannot be ticked.
+- **Section locks.** A section holding locked text is copied through a merge byte for byte.
+  Imported text is locked by definition, so re-importing a spec you already wrote and
+  regenerating leaves every sentence of it alone.
+- **Import-merge.** `npm run eval:import` proves it against a real 71-line proposal: 40 of 40
+  body lines survive, 9 of 9 headings land, and the generator fills only the sections nobody
+  wrote.
+
+## The model is optional
+
+Off by default. Three modes: off, template only, shape with a model. Every model is listed
+with its download size before anything is opened: the 879 MB one is the default and the 3.4 GB
+one is recommended.
+
+Whether shaping runs at all is decided by a measured budget, not by optimism:
+
+```
+estimate(input) + 256 + outputReserve <= contextTokens
+```
+
+`estimate` is `max(chars / 4, words * 1.30)`, always labelled an estimate. The context window
+is 4096 tokens per file, the overhead is 256, and the per-file output reserve is 900 for
+`proposal.md`, 1400 for `design.md` and 1100 for `tasks.md`. A run that does not fit is
+refused with all four numbers named, and switching to a smaller-window model recomputes
+without reloading anything.
+
+Model output must cite its sources: every factual sentence ends with `[[answer:N]]`. At 0.80
+coverage and above the run is accepted, between 0.60 and 0.80 it is accepted with a banner
+naming the percentage, and under 0.60 it is thrown away and your template output stays exactly
+as it was.
+
+## Run it
+
+The fastest path needs nothing but Docker.
 
 ```bash
 git clone https://github.com/jouselt/spec-forge.git
@@ -40,100 +101,87 @@ cd spec-forge
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). Set `WEB_PORT` to serve it elsewhere: `WEB_PORT=9000 docker compose up -d`.
+Open http://localhost:8080. Set `WEB_PORT` to serve it elsewhere.
 
-The image is a multi-stage build (Node builds the app, nginx serves the static output), so Node is not needed on your machine. The build accepts `BASE_HREF` if you serve the app under a subpath instead of at the root.
-
-## Development
+For development:
 
 ```bash
-npm install
-npm start
+npm install    # also points git at .githooks, which runs the gate before a commit
+npm start      # http://localhost:4200
 ```
-
-Open [http://localhost:4200](http://localhost:4200).
 
 | Command | What it does |
 | --- | --- |
 | `npm start` | Serve locally on port 4200 |
-| `npm run build` | Typecheck, then build for production into `dist/spec-forge` |
-| `npm test` | Run unit tests headless (Karma, ChromeHeadless) |
-| `npm run typecheck` | TypeScript strict check with no emit |
+| `npm run build` | Build for production into `dist/spec-forge` |
+| `npm test` | The whole suite, headless (610 specs) |
+| `npm run gate` | The pre-commit check: layering, spec style, ESLint on staged files |
+| `npm run typecheck` | TypeScript strict, no emit |
+| `npm run lint` | ESLint over the whole tree, as CI runs it |
+| `npm run lint:specs` | The three specs in this repo against the style rules the app enforces |
 | `npm run eval:readability` | Assemble five real answer sets and write the rating sheet |
-| `npm run eval:readability:score` | Read `ratings.csv`; exits non-zero while a rating is missing |
+| `npm run eval:gate` | Ten mixed runs against the gate |
+| `npm run eval:import` | Import a real proposal, regenerate, check every line survived |
+| `npm run eval:bundle` | Build, then assert the zip library stayed out of the initial bundle |
 
-## Project Structure
+The gate is fast enough to leave switched on: 1494 ms with one staged file. It runs the
+layering scan and the spec style lint over the whole repository and ESLint over what you are
+about to commit, which is the only way a check survives contact with a person who is in a
+hurry.
 
-Only the files listed as done exist today.
+## Demo script
+
+1. Open the app. The model bar says Off and the template path is already selected.
+2. Answer the nine questions, using a real project you have. Mention something specific in an
+   answer and watch the follow-up appear with the reason it was asked.
+3. Press Generate. Three files appear, every block tagged by origin, and the export gate has
+   nothing to block on.
+4. Edit one block by hand and press Pin. Generate again: that section does not change.
+5. Edit a different block, press Generate, and read the diff. Reject the section you edited
+   and accept the rest.
+6. Download the bundle, or the zip, or copy it. Open the files.
+
+## What is not built
+
+Named rather than quietly missing:
+
+- The WebLLM runtime itself. `model/inference.worker.ts` exists, compiles, and resolves the
+  library at run time; without the package installed it answers with a sentence instead of a
+  stack trace. Installing `@mlc-ai/web-llm` is the whole change.
+- Nothing calls `promoteQuestion` from the UI yet: the interview accepts a promoted question
+  and its answer, and the chip that would promote one is parsed, but the button is not
+  wired.
+
+Three checks need a person and are recorded as such in `tasks.md`: the readability rating
+sheet, the human half of the gate eval, and the shaping eval with a real model.
+
+## Checks
+
+- 610 specs pass, plus `typecheck`, `lint`, `lint:specs`, the layering scan, the secret scan
+  and three evals.
+- No backend, no API key, no GitHub API: enforced by `scripts/scan-secrets.mjs`, not by this
+  paragraph.
+- `core/` and `templates/` import no framework, no database and no model library: enforced by
+  `scripts/scan-imports.mjs`, because the evals compile those two directories with plain
+  `tsc` and run them under node.
+- Initial bundle 411.74 kB raw, 116.48 kB transfer, with the zip library in a lazy chunk.
+
+## Project structure
 
 ```
 src/app/
-  core/              Pure functions, no Angular, no IndexedDB, no WebLLM
-    question-graph.ts    Core types (Answer, Question, Block, Origin)   done
-    steps.ts             Nine base questions                             done
-    triggers.ts          Ten-trigger table and evaluateTriggers           done
-    mapping.ts           Answer ID to (file, section) table              done
-    provenance.ts        Block tagging, gaps, origin counts              done
-    validator.ts         Structure, shape, and style checks              planned
-    gate.ts              Export gate evaluation                          planned
-    diff.ts              Line-level diff and merge                       planned
-    style-lint.ts        Em dashes and banned words                      planned
-    export.ts            Blob building and export                        planned
-
-  templates/         Template rendering (no model)                        done
-    frame.ts             Frame vocabulary, tokens, shape patterns        done
-    proposal.tpl.ts      Section frames for proposal.md                  done
-    design.tpl.ts        Section frames for design.md                    done
-    tasks.tpl.ts         Phase frames and the tag classifier             done
-    assembly.ts          AnswerSet to Blocks with provenance             done
-    fixtures/            Five answer sets for the readability eval       done
-  model/             Optional model path (WebLLM)                         planned
-  state/             Signal-based state management                        done
-    wizard-store.service.ts   Answers, derived question list, position    done
-    trigger-reason.ts         Follow-up reason sentence                   done
-    review-store.ts           Per-block review state                      planned
-    snapshot-store.ts         Versions, locks, restore                    planned
-  persistence/       IndexedDB                                             planned
-  ui/                Angular components                                    done
-    question-panel/  Prompt, help, reason, control, validation, nav        done
-    step-rail/       Every question in order, with state and reason        done
-    step-stepper/    Segment row plus the "N out of M" footer              done
-    controls/        text, longtext, number, choice, list, table           done
-evals/readability/   Harness, fixtures output and the rating sheet         done
+  core/          Pure functions: no Angular, no IndexedDB, no WebLLM
+  templates/     The template path, and the fixtures the evals use
+  model/         The optional model path, behind one narrow interface
+  state/         Signal stores: wizard, documents, snapshots, draft, model
+  persistence/   IndexedDB, behind one file
+  ui/            The interview, the output, the gate, the diff, the versions
+scripts/         The layering scan, the secret scan, the gate
+evals/           Readability, gate, import, bundle
 ```
 
-## The Design
-
-See [design.md](./design.md) for the full architecture, data model, and trade-offs.
-
-**Key points:**
-
-- **Interview before generation.** Nine base steps plus adaptive triggers capture the hard questions up front.
-- **Template path is the default.** No model needed; output traces back to answers.
-- **Export gate blocks on inferred content.** Unreviewed model text and missing sections prevent export.
-- **Regression guards.** Snapshots, diff-before-apply, section locks, and import-merge.
-- **Marker protocol.** Model-generated prose must cite sources with `[[answer:N]]`. Coverage under 60% fails the run.
-
-## Acceptance Criteria
-
-- [x] Completing the nine base steps produces three files with zero inferred blocks.
-- [x] Adaptive triggers fire on keyword matches and retract when keywords are removed.
-- [ ] Export is blocked while any block is inferred and unreviewed.
-- [ ] Snapshots before every generation preserve prior versions.
-- [ ] Importing a real spec and regenerating leaves imported text unchanged.
-- [x] `npm test` passes: 299 specs, about 13s wall time including the build and the browser launch.
-- [ ] A gate suite that finishes in under 2s. Today `npm test` runs the whole Karma suite with coverage, so the 2s budget is an unbuilt target, not a measurement.
-- [x] TypeScript strict plus strictTemplates pass with no errors.
-- [x] No backend, no API key, no GitHub integration.
-
-## Tech Stack
-
-- Angular 20.3, standalone components, signals, TypeScript strict
-- Karma and Jasmine for the suite; Docker and nginx for the static serve
-- No state library (signals are enough)
-- No backend (static deploy)
-- Declared in `package.json` for later phases, imported nowhere in `src/` yet: `codemirror`, `@codemirror/view`, `@codemirror/lang-markdown`, `idb`, `fflate`
-- Not a dependency: `@mlc-ai/web-llm`. The optional in-browser model path is described in [proposal.md](./proposal.md) and [design.md](./design.md), but the package is not in `package.json` and is not installed
+See [design.md](./design.md) for the architecture and the trade-offs, and
+[tasks.md](./tasks.md) for the phase list with its evidence.
 
 ## License
 

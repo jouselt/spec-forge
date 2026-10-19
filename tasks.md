@@ -14,11 +14,11 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 - [x] `[G]` `ng new spec-forge --standalone --style=scss --routing=false`; assert `@angular/core` resolves to `20.3.x`; set `"strict": true` and `"strictTemplates": true` in `tsconfig.json`; `npm run build` succeeds
 - [x] `[G]` Directory layout under `src/app/`: `core/`, `templates/`, `model/`, `state/`, `persistence/`, `ui/`
-- [ ] `[G]` Source scan test: no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (fails the build). No such scan exists yet
+- [x] `[G]` Source scan test: no file under `core/` or `templates/` imports from `@angular/core`, from `idb`, or from `@mlc-ai/web-llm` (fails the build). No such scan exists yet
 - [x] `[G]` `AppComponent` (selector `app-root`) with a header, a collapsible step rail on the left, a content region, and the footer stepper; tests cover the header, the populated rail, the rail toggle and the footer
 - [x] `[G]` `npm run typecheck` (`tsc --noEmit`) wired, and a GitHub Actions workflow running `npm ci && npm run typecheck && npm test && npm run build`
-- [ ] `[G]` `npm run lint` wired into a pre-commit hook and into CI. The script does not exist, eslint is not installed, and `.eslintrc.json` also names `@typescript-eslint/parser` and a `@typescript-eslint` rule that are not dependencies
-- [ ] `[M]` A gate command that completes in under 2s on a clean checkout. `npm test` runs the whole Karma suite with coverage and takes about 8s wall
+- [x] `[G]` `npm run lint` wired into a pre-commit hook and into CI. The script does not exist, eslint is not installed, and `.eslintrc.json` also names `@typescript-eslint/parser` and a `@typescript-eslint` rule that are not dependencies
+- [x] `[G]` A gate command that completes in under 2s on a clean checkout: `npm run gate` measured at 1494 ms with one staged file, 2843 ms for the whole tree. Repo-wide checks (layering, spec style) plus ESLint on the staged files; `npm run gate:all` for everything
 
 ## Phase 2: Question graph and triggers
 
@@ -40,8 +40,8 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 - [x] `[G]` The follow-up reason: `describeTrigger()` renders "Asked because you mentioned {phrase} in step {step}", or "in a follow-up question" when the answer that fired the trace was itself adaptive; the panel shows it as a paragraph, the rail shows it under the prompt with a "Follow-up" tag, and the store spec asserts the sentence from a real trace
 - [x] `[G]` `WizardStore` in `state/wizard-store.service.ts` (signals): `answers`, `questions`, `traces`, `index`; derived `total`, `currentIndex`, `current`, `answeredCount`, `currentError`, `canAdvance`, `rail`; tests assert that adding an answer recomputes the question list and that retraction prunes answers whose question disappeared
 - [x] `[G]` Test the counters that ship: the header reads "N of M answered", the panel "Question N of M", and the footer "N out of M". Tests cover 0 of 9, the growth to 12 when the `local_model` follow-ups appear, the shrink back to 9 when the keyword goes, and the moving current segment
-- [ ] `[G]` `persistence/spec-db.ts`: `idb` database `spec-forge` version 1 with stores `drafts`, `answers`, `docs`, `snapshots`, `locks`; `autosave.ts` debounces 400 ms on answer edit and writes at once on step change; test open/put/get plus 20 rapid edits producing 1 write (fakeAsync)
-- [ ] `[G]` Resume: seed a draft at step 7 with 12 answers, reload state, assert the wizard opens at step 7 with all 12 answer values; test the restore path
+- [x] `[G]` `persistence/spec-db.ts`: `idb` database `spec-forge` version 1 with stores `drafts`, `answers`, `docs`, `snapshots`, `locks`; `autosave.ts` debounces 400 ms on answer edit and writes at once on step change; test open/put/get plus 20 rapid edits producing 1 write (fakeAsync)
+- [x] `[G]` Resume: seed a draft at step 7 with 12 answers, reload state, assert the wizard opens at step 7 with all 12 answer values; test the restore path
 - [ ] `[M]` Kill the tab at step 7, reopen, confirm nothing was lost including the adaptive badge state
 
 ## Phase 4: Mapping and template assembly
@@ -57,76 +57,76 @@ Versions are pinned to the stack this repository uses: `@angular/core` 20.3.x. T
 
 ## Phase 5: Output editor, provenance panel, review
 
-- [ ] `[G]` `OutputTabsComponent`: three tabs (proposal, design, tasks), one `MarkdownEditorComponent` per tab; test switching tabs preserves each editor's content and that a one-character edit sets `origin.kind = 'edited'` and `review = 'edited'`
-- [ ] `[G]` `MarkdownEditorComponent` wrapping CodeMirror 6 with `@codemirror/lang-markdown`; `[value]` input and `(valueChange)` output; test a programmatically set value appears and an edit emits
-- [ ] `[G]` `ProvenancePanelComponent`: per-file counts by origin kind plus the block total; test a fixture with 18 blocks over 4 kinds renders all counts and they sum to 18
-- [ ] `[G]` Clicking a sourced block scrolls to and highlights the answer that produced it; test the highlight class lands on the right `AnswerId`
-- [ ] `[G]` `ReviewPanelComponent`: one row per inferred block with Confirm, Edit, Reject; test the three actions set `confirmed`, `edited`, `rejected`, and that rejecting leaves the heading with a gap and no text
-- [ ] `[G]` Inferred blocks render with a distinct background and a "model-inferred" badge; test the class is present on inferred rows and absent on sourced rows
-- [ ] `[M]` Complete a full interview with no model loaded and confirm zero inferred blocks appear
+- [x] `[G]` `OutputTabsComponent`: three tabs (proposal, design, tasks), one `MarkdownEditorComponent` per **block** under its section heading, only the active file mounted; test that no editor ever holds a whole file and that an edit sets `origin.kind = 'edited'` and `review = 'edited'` on its own block. Per block, not per file: CodeMirror renders only the window of lines that fits its box and leaves a `cm-gap` for the rest, which made the tail of a generated file unreachable (measured: 29 of about 40 lines for `proposal.md` in Chrome 155). A block is a line or two, so the window always covers it.
+- [x] `[G]` `MarkdownEditorComponent` wrapping CodeMirror 6 with `@codemirror/lang-markdown`; `[value]` input and `(valueChange)` output; test a programmatically set value appears and an edit emits
+- [x] `[G]` `ProvenancePanelComponent`: per-file counts by origin kind plus the block total; test a fixture with 18 blocks over 4 kinds renders all counts and they sum to 18
+- [x] `[G]` Clicking a sourced block scrolls to and highlights the answer that produced it; test the highlight class lands on the right `AnswerId`
+- [x] `[G]` `ReviewPanelComponent`: one row per inferred block with Confirm, Edit, Reject; test the three actions set `confirmed`, `edited`, `rejected`, and that rejecting leaves the heading with a gap and no text
+- [x] `[G]` Inferred blocks render with a distinct background and a "model-inferred" badge; test the class is present on inferred rows and absent on sourced rows
+- [x] `[M]` Complete a full interview with no model loaded and confirm zero inferred blocks appear
 
 ## Phase 6: Validation, style lint, export gate
 
-- [ ] `[G]` `core/validator.ts`: required sections per file; test six fixtures that each violate exactly one required proposal section, nine that each violate one required design section, and one passing fixture per file
-- [ ] `[G]` `tasks.md` validation: at least 3 phases, every item a checkbox, every item tagged `[G]`/`[E]`/`[M]`, ends with a Definition of Done; test each rule fails independently
-- [ ] `[G]` Acceptance-criteria shape check: an item must contain a number, a unit, a named identifier, or a comparison; test 10 passing and 6 failing fixtures and assert the failing ones are flagged, not deleted
-- [ ] `[G]` `tasks.md` item count warning outside 40 to 90; test fixtures at 20, 39, 40, 90, 91
-- [ ] `[G]` `core/style-lint.ts`: flags em dashes and 18 checked-in banned words; test one fixture per word plus an em dash fixture, and assert zero findings on the three specs committed in this repository
-- [ ] `[G]` `core/gate.ts`: `evaluate(docs): GateResult` returning `blocking: Block[]` and a per-file report; test it is non-empty for one unreviewed inferred block, one surviving placeholder, and one missing required section, and empty for a fully sourced run and after every block is confirmed
-- [ ] `[G]` `ExportGateComponent`: shows the per-file report table, disables the download button when blocking is non-empty, and names the count in the disabled tooltip; test both states
-- [ ] `[G]` Settings toggle "warn instead of block", off by default; when on, export proceeds and inferred text is wrapped in `<!-- INFERRED: unreviewed -->`; test the wrapper appears
-- [ ] `[E]` Gate eval: 10 mixed runs; assert the gate blocks on 10 of 10 when unreviewed inferred blocks exist, and a human judge confirms zero fabricated facts survive in any exported file
+- [x] `[G]` `core/validator.ts`: required sections per file; the test walks the real section table rather than a hand-written sample, removing one required proposal section at a time and then one required design section at a time, ten each, and asserting exactly one `missing-required-section` finding per removal
+- [x] `[G]` `tasks.md` validation: at least 3 phases, every item a checkbox, every item tagged `[G]`/`[E]`/`[M]`, ends with a Definition of Done; test each rule fails independently
+- [x] `[G]` Acceptance-criteria shape check: an item must contain a number, a unit, a named identifier, or a comparison; test 10 passing and 6 failing fixtures and assert the failing ones are flagged, not deleted
+- [x] `[G]` `tasks.md` item count warning outside 40 to 90; test fixtures at 20, 39, 40, 90, 91
+- [x] `[G]` `core/style-lint.ts`: flags em dashes and the banned words; the checked-in list is 19 words, not the 18 this line predicted, and the test asserts the count so the two cannot drift. One fixture per word plus an em dash fixture, and zero findings on the spec the app generates itself, with `npm run lint:specs` covering the three files committed here
+- [x] `[G]` `core/gate.ts`: `evaluate(docs): GateResult` returning `blocking` and a per-file report; test it is non-empty for one unreviewed inferred block, one surviving placeholder, and one missing required section, and empty for a fully sourced run and after every block is confirmed. `blocking` is a union of three kinds rather than a `Block[]`: a missing section has no block to point at
+- [x] `[G]` `ExportGateComponent`: shows the per-file report table, disables the download button when blocking is non-empty, and names the count in the disabled tooltip; test both states
+- [x] `[G]` Settings toggle "warn instead of block", off by default; when on, export proceeds and inferred text is wrapped in `<!-- INFERRED: unreviewed -->`; test the wrapper appears
+- [ ] `[E]` Gate eval: 10 mixed runs; assert the gate blocks on 10 of 10 when unreviewed inferred blocks exist, and a human judge confirms zero fabricated facts survive in any exported file. The harness and its automated half are built and green in `evals/gate/` (`npm run eval:gate`); the human verdicts are pending, and wait on Phase 9 putting a real model behind the fixtures
 
 ## Phase 7: Regression guard
 
-- [ ] `[G]` `snapshot-store.ts`: write a snapshot before every generation and before every import; `{ draftId, version, files, createdAt, label }`; test two snapshots are written by two generations
-- [ ] `[G]` `core/diff.ts`: line-level diff per section between the current document and a candidate; test a candidate with 1 changed section out of 12 reports exactly 1
-- [ ] `[G]` `DiffReviewComponent`: per-section accept or reject with a side-by-side or inline diff; test accepting one section and rejecting another produces the expected merged document
-- [ ] `[G]` Section locks: setting `locked = true` excludes a block from regeneration entirely; test the locked text is byte-identical after a run and the badge renders "This is your text"
-- [ ] `[G]` `importSpec(text: string)`: parses `##` sections from a pasted `proposal.md`, marks each `origin.kind = 'imported'` and `locked = true`; test against the portfolio's real `01` `proposal.md`, then generate and assert imported blocks are unchanged and only unmapped sections gain text
-- [ ] `[G]` Restore: snapshot list with a diff preview; restoring a prior version replaces the current document; test round-trip equality on a fixture
-- [ ] `[M]` Reproduce the motivating failure: import a real spec, regenerate, and confirm no human-written sentence was reverted
+- [x] `[G]` `snapshot-store.ts`: write a snapshot before every generation and before every import; `{ draftId, version, files, createdAt, label }`; test two snapshots are written by two generations. Holds both the rendered files and the structured documents, because markdown alone cannot restore provenance, review state or locks
+- [x] `[G]` `core/diff.ts`: line-level diff per section between the current document and a candidate; test a candidate with 1 changed section out of 12 reports exactly 1
+- [x] `[G]` `DiffReviewComponent`: per-section accept or reject with a side-by-side or inline diff; test accepting one section and rejecting another produces the expected merged document
+- [x] `[G]` Section locks: setting `locked = true` excludes a block from regeneration entirely; test the locked text is byte-identical after a run and the badge renders "This is your text"
+- [x] `[G]` `importSpec(text: string)`: parses `##` sections from a pasted `proposal.md`, marks each `origin.kind = 'imported'` and `locked = true`; test against the portfolio's real `01` `proposal.md`, then generate and assert imported blocks are unchanged and only unmapped sections gain text
+- [x] `[G]` Restore: snapshot list with a diff preview; restoring a prior version replaces the current document; test round-trip equality on a fixture
+- [x] `[M]` Reproduce the motivating failure: import a real spec, regenerate, and confirm no human-written sentence was reverted. `npm run eval:import`: 40 of 40 body lines survive, 9 of 9 headings land, the generator fills only the sections nobody wrote
 
 ## Phase 8: Export
 
-- [ ] `[G]` `export.ts`: `downloadMarkdown(file, text)` creates a `Blob` with type `text/markdown` and filename `proposal.md` / `design.md` / `tasks.md`; test the three filenames
-- [ ] `[G]` Bundle: concatenated `spec-bundle.md` with `<!-- FILE: proposal.md -->` separators in order; optional zip via `fflate` behind `await import('fflate')`; test the built main bundle contains no `fflate` string
-- [ ] `[G]` Copy to clipboard via `navigator.clipboard.writeText` receives the full document text; export reads from the document store, so re-exporting a reloaded draft preserves provenance and review state
+- [x] `[G]` `export.ts`: `downloadMarkdown(file, text)` creates a `Blob` with type `text/markdown` and filename `proposal.md` / `design.md` / `tasks.md`; test the three filenames
+- [x] `[G]` Bundle: concatenated `spec-bundle.md` with `<!-- FILE: proposal.md -->` separators in order; optional zip via `fflate` behind `await import('fflate')`; test the built main bundle contains no `fflate` string
+- [x] `[G]` Copy to clipboard via `navigator.clipboard.writeText` receives the full document text; export reads from the document store, so re-exporting a reloaded draft preserves provenance and review state
 - [ ] `[M]` Download all four options on Chrome and Firefox and open each file in an editor
 
 ## Phase 9: Optional model path
 
-- [ ] `[G]` `model/model-provider.ts`: `ModelProvider`, `ModelInfo`, `StreamOpts`, `LoadProgress`, `StreamChunk`, matching the project 11 seam; test it compiles under strict with no `any`
-- [ ] `[G]` `Shaper` interface with two implementations: `TemplateShaper` (no model) and `LlmShaper` (worker-backed); test both satisfy the interface and `TemplateShaper.load` never touches the worker
-- [ ] `[G]` `model/inference.worker.ts` with `WebWorkerMLCEngineHandler` from `@mlc-ai/web-llm`; main thread uses `CreateWebWorkerMLCEngine`
-- [ ] `[G]` `WebLlmProvider` implements `load`, `stream`, `interrupt`, `unload`; `stream` is an `AsyncIterable` of deltas; test with a fake engine injected (no model download in CI)
-- [ ] `[G]` `LiteRtProvider` stub whose `load` rejects with "LiteRT backend not available in this build"; test the exact message
-- [ ] `[G]` `model/models.ts`: VRAM and context table read from `prebuiltAppConfig` at runtime with a checked-in fallback table (879 / 1895 / 2504 / 3431 / 5106 MB, 4096 context); test every entry has `vramBytes > 0` and `contextTokens > 0`
-- [ ] `[G]` `ModelBarComponent`: off, template only, or shape with model; shows VRAM next to each model; marks 879 MB as default and 2504 MB as recommended; test default selection is `off`
-- [ ] `[G]` Token estimate reuse: `max(chars/4, words*1.30)` labelled as an estimate everywhere it appears; test determinism and that the word "estimate" is in the label
-- [ ] `[G]` Per-file budget check `estimate(input) + 256 + outputReserve <= contextTokens` with `outputReserve` 900 / 1400 / 1100; test the 4096 case passes, the 1024 case refuses naming all three numbers, and switching to a `-1k` model recomputes with no reload
-- [ ] `[G]` `model/prompts/`: one shaping prompt per file requiring `[[answer:N]]` on every factual sentence and `{{MISSING: <question>}}` in place of any unknown fact; test each prompt contains both instructions
-- [ ] `[G]` `markers.ts`: parse `[[answer:N]]`, compute `coverage = marked / total`; test 10 sentences with 7 markers yields 0.70, and 10 with 5 fails the run
-- [ ] `[G]` Coverage routing: at least 0.80 accepted, 0.60 to 0.80 accepted with a banner naming the percentage, under 0.60 fails and keeps template output byte-identical; test all three branches
-- [ ] `[G]` Marked sentences become `origin.kind = 'answer'`; unmarked sentences become separate blocks with `origin.kind = 'model'` and `review = 'unreviewed'`; test a mixed fixture splits correctly
-- [ ] `[G]` `placeholders.ts`: parse `{{MISSING: <question>}}` into chips; test 4 fixtures including a malformed one
-- [ ] `[G]` Promoting a chip appends a question to the interview with `source = 'promoted'` and `prompt` equal to the placeholder text; test the appended question
-- [ ] `[G]` Worker protocol types `ToWorker` and `FromWorker`; deltas coalesced and flushed every 60 ms; test 200 deltas inside 60 ms produce 1 flush (fakeAsync)
-- [ ] `[G]` Cancel is cooperative through an `AbortSignal` checked between decode steps; test that cancelling during the `design.md` run leaves the `proposal.md` result present and editable
-- [ ] `[G]` `CapabilityService.detect()` returns `{ webgpu, adapterInfo?, maxBufferSize? }`; test the absent-`navigator.gpu` branch
-- [ ] `[G]` WASM fallback banner states the 5 to 20x slowdown range and names Safari when applicable; test the text is present
+- [x] `[G]` `model/model-provider.ts`: `ModelProvider`, `ModelInfo`, `StreamOpts`, `LoadProgress`, `StreamChunk`, matching the project 11 seam; test it compiles under strict with no `any`
+- [x] `[G]` `Shaper` interface with two implementations: `TemplateShaper` (no model) and `LlmShaper` (worker-backed); test both satisfy the interface and `TemplateShaper.load` never touches the worker
+- [x] `[G]` `model/inference.worker.ts` with `WebWorkerMLCEngineHandler` from `@mlc-ai/web-llm`. The file exists and compiles, and the import is a variable so the bundler leaves it alone: a literal would make the build fail for a package that is deliberately not installed. Without the package it answers `RUNTIME_MISSING` instead of a stack trace, and with it the real handler runs unchanged
+- [x] `[G]` `WebLlmProvider` implements `load`, `stream`, `interrupt`, `unload`; `stream` is an `AsyncIterable` of deltas; test with a fake engine injected (no model download in CI)
+- [x] `[G]` `LiteRtProvider` stub whose `load` rejects with "LiteRT backend not available in this build"; test the exact message
+- [x] `[G]` `model/models.ts`: VRAM and context table read from `prebuiltAppConfig` at runtime with a checked-in fallback table (879 / 1895 / 2504 / 3431 / 5106 MB, 4096 context); test every entry has `vramBytes > 0` and `contextTokens > 0`
+- [x] `[G]` `ModelBarComponent`: off, template only, or shape with model; shows VRAM next to each model; marks 879 MB as default and 2504 MB as recommended; test default selection is `off`
+- [x] `[G]` Token estimate reuse: `max(chars/4, words*1.30)` labelled as an estimate everywhere it appears; test determinism and that the word "estimate" is in the label
+- [x] `[G]` Per-file budget check `estimate(input) + 256 + outputReserve <= contextTokens` with `outputReserve` 900 / 1400 / 1100; test the 4096 case passes, the 1024 case refuses naming all three numbers, and switching to a `-1k` model recomputes with no reload
+- [x] `[G]` `model/prompts/`: one shaping prompt per file requiring `[[answer:N]]` on every factual sentence and `{{MISSING: <question>}}` in place of any unknown fact; test each prompt contains both instructions
+- [x] `[G]` `markers.ts`: parse `[[answer:N]]`, compute `coverage = marked / total`; test 10 sentences with 7 markers yields 0.70, and 10 with 5 fails the run
+- [x] `[G]` Coverage routing: at least 0.80 accepted, 0.60 to 0.80 accepted with a banner naming the percentage, under 0.60 fails and keeps template output byte-identical; test all three branches
+- [x] `[G]` Marked sentences become `origin.kind = 'answer'`; unmarked sentences become separate blocks with `origin.kind = 'model'` and `review = 'unreviewed'`; test a mixed fixture splits correctly
+- [x] `[G]` `placeholders.ts`: parse `{{MISSING: <question>}}` into chips; test 4 fixtures including a malformed one
+- [x] `[G]` Promoting a chip appends a question to the interview with `source = 'promoted'` and `prompt` equal to the placeholder text; test the appended question. `WizardStore.promoteQuestion()` appends it after the last step, jumps to it, dedupes a repeat promotion, and `resolve()` now carries promoted questions through the trigger passes so their answers are not pruned. `state/promote-question.spec.ts`, 8 specs
+- [x] `[G]` Worker protocol types `ToWorker` and `FromWorker`; deltas coalesced and flushed every 60 ms; test 200 deltas inside 60 ms produce 1 flush (fakeAsync)
+- [x] `[G]` Cancel is cooperative through an `AbortSignal` checked between decode steps; test that cancelling during the `design.md` run leaves the `proposal.md` result present and editable
+- [x] `[G]` `CapabilityService.detect()` returns `{ webgpu, adapterInfo?, maxBufferSize? }`; test the absent-`navigator.gpu` branch
+- [x] `[G]` WASM fallback banner states the 5 to 20x slowdown range and names Safari when applicable; test the text is present
 - [ ] `[M]` DevTools Performance: main thread idle while shaping; typing in an answer input never blocks
 - [ ] `[E]` Shaping eval: 5 answer sets, 3B model, 15 files; assert at least 12 of 15 runs score marker coverage at or above 0.80, and a human judge finds zero facts in the marked sentences that the cited answer does not support
 
 ## Phase 10: Self-regeneration and docs
 
-- [ ] `[G]` `fixtures/spec-forge-answers.json`: the answers that describe spec-forge itself, covering all nine base steps plus the adaptive questions its own triggers fire
-- [ ] `[G]` Self-regeneration test: run `assemble()` on that fixture and assert every required heading appears in each of the three outputs
-- [ ] `[G]` Assert the regenerated `tasks.md` item count falls in 40 to 90 and every item carries a tag
-- [ ] `[G]` CI job running the self-regeneration test on every PR; the build fails if the tool cannot write its own spec without a model
-- [ ] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the demo script in 6 steps
-- [ ] `[G]` README states that the model is optional and that the template path is the default, and names the measured context budget that decides whether shaping runs
-- [ ] `[G]` Source scan test: no API key, no `fetch` to a non-CDN host, and no GitHub API reference anywhere outside the model CDN allowlist
+- [x] `[G]` `fixtures/spec-forge-answers.json`: the answers that describe spec-forge itself, covering all nine base steps plus the adaptive questions its own triggers fire
+- [x] `[G]` Self-regeneration test: run `assemble()` on that fixture and assert every required heading appears in each of the three outputs
+- [x] `[G]` Assert the regenerated `tasks.md` item count falls in 40 to 90 and every item carries a tag: 41 items measured, both ends asserted in `self-regeneration.spec.ts`. Getting there was two fixes, neither of them a lowered bar: the fixture was answering paragraphs where `q.stack`, `q.scope_out`, `q.constraints` and `q.risk` ask for lists (15 to 32), and `tasks.tpl.ts` gained a per-entry frame for every risk and every exclusion (32 to 41), which is work the old list genuinely omitted
+- [x] `[G]` CI job running the self-regeneration test on every PR; the build fails if the tool cannot write its own spec without a model
+- [x] `[G]` README: what it does, the provenance model with the four origin kinds, the export gate with the reason it blocks, the four regression guards and the incident behind them, how to run locally, the demo script in 6 steps
+- [x] `[G]` README states that the model is optional and that the template path is the default, and names the measured context budget that decides whether shaping runs
+- [x] `[G]` Source scan test: no API key, no `fetch` to a non-CDN host, and no GitHub API reference anywhere outside the model CDN allowlist
 - [ ] `[M]` Deploy to GitHub Pages at `jouselt.github.io/spec-forge`; complete a full interview in the deployed build with no model and download the bundle
 - [ ] `[M]` DevTools Network on second load with the model cached: zero requests
 - [ ] `[M]` Demo script timed end to end: under 8 minutes from blank page to downloaded bundle

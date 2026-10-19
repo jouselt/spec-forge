@@ -52,11 +52,18 @@ export class WizardStore {
   private readonly questionList = signal<Question[]>(orderQuestions(BASE_STEPS));
   private readonly traceList = signal<TriggerTrace[]>([]);
   private readonly position = signal(0);
+  private readonly highlight = signal<string | null>(null);
+  private readonly promotedList = signal<Question[]>([]);
 
   readonly answers = this.answerList.asReadonly();
   readonly questions = this.questionList.asReadonly();
   readonly traces = this.traceList.asReadonly();
   readonly index = this.position.asReadonly();
+
+  /** The answer a caller asked to see, or null when nothing is highlighted. */
+  readonly highlighted = this.highlight.asReadonly();
+  /** Questions promoted from a `{{MISSING: ...}}` chip, in the order they were promoted. */
+  readonly promoted = this.promotedList.asReadonly();
 
   readonly total = computed(() => this.questionList().length);
   /** The position clamped into the list, so a shrinking list never strands the user. */
@@ -139,6 +146,68 @@ export class WizardStore {
     this.applyAnswers([...this.answerList(), this.createAnswer(question, text, now)]);
   }
 
+  /**
+   * Put a stored draft back, before anything else runs.
+   *
+   * The answers go in first and the question list is rebuilt from them, because every
+   * follow-up question is derived: restoring the step before the answers would land at an
+   * index that means something else by the time it is applied. The traces are recomputed
+   * from the answers rather than trusted from disk, for the same reason.
+   */
+  restore(answers: Answer[]): void {
+    this.applyAnswers([...answers]);
+    this.position.set(0);
+    this.highlight.set(null);
+  }
+
+  /**
+   * Append a question to the interview, and go to it.
+   *
+   * This is the loop closing: a model that could not answer something writes
+   * `{{MISSING: <the question>}}`, a person promotes the chip, and the interview asks that
+   * question on the next run. The question lands after the last step so it does not reorder
+   * the interview somebody is already half way through.
+   */
+  promoteQuestion(prompt: string, help?: string): Question | null {
+    const trimmed = prompt.trim();
+
+    if (trimmed.length === 0) {
+      return null;
+    }
+
+    const id = `promoted.${trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48)}`;
+
+    if (this.questionList().some((question) => question.id === id)) {
+      const existing = this.questionList().find((question) => question.id === id) ?? null;
+
+      if (existing) {
+        this.jumpToQuestion(existing.id);
+      }
+
+      return existing;
+    }
+
+    const last = this.questionList().reduce((max, question) => Math.max(max, question.step), 0);
+    const question: Question = {
+      id,
+      step: last + 0.5,
+      prompt: trimmed,
+      help: help ?? 'Promoted from a gap in an earlier run.',
+      kind: 'longtext',
+      required: false,
+    };
+
+    this.promotedList.update((questions) => [...questions, question]);
+    this.applyAnswers(this.answerList());
+    this.jumpToQuestion(id);
+
+    return question;
+  }
+
   /** Advance one question. Blocked while the current question fails validation. */
   next(): void {
     if (!this.canAdvance()) {
@@ -167,6 +236,20 @@ export class WizardStore {
     }
   }
 
+  /**
+   * Jump to the question behind an answer and mark it, so a view can show where
+   * a generated sentence came from. An id that is not part of the interview
+   * marks nothing, so a stale provenance id cannot move the wizard.
+   */
+  highlightAnswer(answerId: string): void {
+    if (!this.questionList().some((question) => question.id === answerId)) {
+      return;
+    }
+
+    this.highlight.set(answerId);
+    this.jumpToQuestion(answerId);
+  }
+
   /** Error message for a question, or null when the answer is acceptable. */
   errorFor(question: Question | null): string | null {
     if (!question) {
@@ -192,6 +275,7 @@ export class WizardStore {
     this.questionList.set(orderQuestions(BASE_STEPS));
     this.traceList.set([]);
     this.position.set(0);
+    this.highlight.set(null);
   }
 
   private reasonFor(question: Question): string | null {
@@ -238,12 +322,14 @@ export class WizardStore {
     traces: TriggerTrace[];
   } {
     let kept = answers;
-    let questions = orderQuestions(BASE_STEPS);
+    let questions = orderQuestions([...BASE_STEPS, ...this.promotedList()]);
     let traces: TriggerTrace[] = [];
 
     for (let pass = 0; pass < MAX_RESOLVE_PASSES; pass++) {
       const result = evaluateTriggers(kept);
-      questions = orderQuestions([...BASE_STEPS, ...result.questions]);
+      // Promoted questions stay in the list: they were appended by a person answering a gap
+      // the model named, and dropping them would prune the answer they were made for.
+      questions = orderQuestions([...BASE_STEPS, ...this.promotedList(), ...result.questions]);
       traces = result.traces;
 
       const known = new Set(questions.map((question) => question.id));

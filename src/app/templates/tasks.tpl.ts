@@ -152,6 +152,13 @@ export const TASKS_TEMPLATE: readonly TemplateSection[] = [
         each: 'constraint_entries',
       },
       {
+        id: 'phase4.scope_never_built',
+        kind: 'check',
+        text: 'Assert that {item} was not built; the test names it so a future commit cannot add it quietly.',
+        when: (shape) => shape.has('q.scope_out'),
+        each: 'scope_entries',
+      },
+      {
         id: 'phase4.sampled_runs',
         kind: 'check',
         text: 'Sample repeated runs and compare them against {proof_sentence}; record the mean and the spread.',
@@ -163,6 +170,13 @@ export const TASKS_TEMPLATE: readonly TemplateSection[] = [
     section: 'Phase 5: Hardening and ship',
     gapQuestion: 'q.risk',
     frames: [
+      {
+        id: 'phase5.risk_each',
+        kind: 'check',
+        text: 'Close {item_label} with a test that fails when the mitigation is removed; a mitigation nobody can point at is a wish.',
+        when: (shape) => shape.has('q.risk'),
+        each: 'risk_entries',
+      },
       {
         id: 'phase5.risk_first',
         kind: 'check',

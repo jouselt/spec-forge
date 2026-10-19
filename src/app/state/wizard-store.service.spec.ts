@@ -122,6 +122,24 @@ describe('WizardStore', () => {
       expect(store.isLast()).toBe(true);
     });
 
+    it('should highlight an answer and move to its question', () => {
+      expect(store.highlighted()).toBeNull();
+
+      store.highlightAnswer('q.goal');
+
+      expect(store.highlighted()).toBe('q.goal');
+      expect(store.current()?.id).toBe('q.goal');
+    });
+
+    it('should ignore a highlight for an id that is not in the interview', () => {
+      store.highlightAnswer('q.goal');
+
+      store.highlightAnswer('q.not_a_question');
+
+      expect(store.highlighted()).toBe('q.goal');
+      expect(store.current()?.id).toBe('q.goal');
+    });
+
     it('should clamp a jump outside the list', () => {
       store.jumpTo(99);
       expect(store.index()).toBe(8);

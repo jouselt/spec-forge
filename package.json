@@ -6,12 +6,22 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "npm run typecheck && ng build",
-    "typecheck": "tsc --noEmit",
     "test": "ng test --watch=false --browsers=ChromeHeadless --code-coverage",
-    "test:watch": "ng test",
+    "lint": "eslint src evals scripts --max-warnings=0",
+    "lint:specs": "node evals/style/run.mjs",
+    "scan:imports": "node scripts/scan-imports.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "gate": "node scripts/gate.mjs",
+    "gate:all": "node scripts/gate.mjs --all",
+    "typecheck": "tsc --noEmit",
     "eval:readability": "node evals/readability/run.mjs",
-    "eval:readability:score": "node evals/readability/run.mjs --score",
-    "prepare": "husky install"
+    "eval:gate": "node evals/gate/run.mjs",
+    "eval:gate:confirm": "node evals/gate/run.mjs --confirm",
+    "eval:import": "node evals/import/run.mjs",
+    "eval:bundle": "npm run build && node evals/bundle/run.mjs",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "test:watch": "ng test",
+    "eval:readability:score": "node evals/readability/run.mjs --score"
   },
   "private": true,
   "dependencies": {
@@ -37,6 +47,7 @@
     "@angular/compiler-cli": "^20.3.0",
     "@types/jasmine": "^5.1.0",
     "@types/node": "^20.0.0",
+    "eslint": "^9.39.5",
     "husky": "^9.0.0",
     "jasmine-core": "^5.2.0",
     "karma": "^6.4.0",
@@ -44,6 +55,7 @@
     "karma-coverage": "^2.2.0",
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.1.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.71.2"
   }
 }

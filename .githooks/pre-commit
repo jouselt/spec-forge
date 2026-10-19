@@ -1,0 +1,16 @@
+#!/bin/sh
+# The gate, before every commit.
+#
+# Installed by `npm install` through the `prepare` script, which points git at this
+# directory. It is versioned so a fresh clone gets the same check, and it is fast enough
+# that nobody learns to reach for --no-verify: see scripts/gate.mjs for what it costs and
+# what it covers.
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ -n "$(git diff --cached --name-only)" ]; then
+  npm run gate --silent
+else
+  echo "pre-commit: nothing staged, skipping the gate"
+fi

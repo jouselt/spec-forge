@@ -1,0 +1,121 @@
+{
+  "id": "spec-forge-itself",
+  "label": "spec-forge describing itself",
+  "what": "The answers that describe this project, so the tool can write its own three files through the template path with no model. If this file stops regenerating a complete spec, the tool has stopped being able to describe itself.",
+  "answers": [
+    {
+      "id": "q.idea",
+      "questionId": "q.idea",
+      "text": "spec-forge is a local-first interview that turns a portfolio project into three files a person can hand to someone else: proposal.md, design.md and tasks.md. It asks about nine topics, fires follow-up questions when an answer mentions something specific, and assembles the files from the answers alone. No backend, no API key, no account.",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.problem",
+      "questionId": "q.problem",
+      "text": "Project specs die in two ways. A person writes them in a document nobody reopens, or an assistant writes them and quietly invents details that sound authoritative. Both end with a file that is not true, which is worse than no file: the reader cannot tell which sentences were checked.",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.workaround",
+      "questionId": "q.workaround",
+      "text": "People write a README at the end, or paste a prompt into a chat window and copy out whatever comes back. The README is honest and incomplete, the chat transcript is complete and unverifiable, and neither survives the next round of edits.",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.goal",
+      "questionId": "q.goal",
+      "text": "Produce three files a reviewer can act on, where every sentence can be traced to the answer it came from, and where the tool refuses to hand over a document that contains an unreviewed guess. One developer fills it in one sitting and downloads all three files.",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.proof",
+      "questionId": "q.proof",
+      "text": "A person who has never seen the project reads proposal.md and can state what it does and who it is for, without asking a follow-up. The export gate blocks with a named reason every time the document holds an inferred block nobody reviewed.",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.constraints",
+      "questionId": "q.constraints",
+      "text": "- Initial bundle: under 500 kB raw, measured on every build\n- Suite: 610 specs, and the gate under 2 s with one staged file\n- Model: 4096 tokens of context and 879 MB for the default weights\n- Network: zero requests after the first load",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.stack",
+      "questionId": "q.stack",
+      "text": "- Angular 20 with standalone components and signals\n- TypeScript strict with strictTemplates\n- CodeMirror 6 for the block editors\n- idb for the draft store\n- fflate for the zip, behind a dynamic import\n- Karma and Jasmine for the suite\n- Docker and nginx for the static serve",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.scope_out",
+      "questionId": "q.scope_out",
+      "text": "- Not a collaborative editor\n- Not a project tracker\n- Not a resume builder\n- Does not publish, deploy or read a repository\n- No account and nothing to sign in to",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.risk",
+      "questionId": "q.risk",
+      "text": "- Trusting a generated sentence because it reads well\n- Losing an edit when a regeneration replaces a section somebody rewrote\n- A model path that downloads a gigabyte and then cannot run without WebGPU\n- A task list so thin that it reads as a summary instead of work",
+      "kind": "longtext",
+      "askedAt": 0,
+      "source": "base"
+    },
+    {
+      "id": "q.a.ctx_window",
+      "questionId": "q.a.ctx_window",
+      "text": "4096 tokens per file, and the budget check refuses a run that would not fit rather than truncating the prompt in silence.",
+      "kind": "text",
+      "askedAt": 0,
+      "source": "adaptive",
+      "trigger": {
+        "triggerId": "local_model",
+        "becauseAnswerId": "q.idea",
+        "matchedPhrase": "no backend",
+        "matchedAt": 0
+      }
+    },
+    {
+      "id": "q.a.vram_gb",
+      "questionId": "q.a.vram_gb",
+      "text": "The default model costs 879 MB and the recommended one 3.4 GB, both shown next to the name before anything is downloaded.",
+      "kind": "text",
+      "askedAt": 0,
+      "source": "adaptive",
+      "trigger": {
+        "triggerId": "local_model",
+        "becauseAnswerId": "q.idea",
+        "matchedPhrase": "no backend",
+        "matchedAt": 0
+      }
+    },
+    {
+      "id": "q.a.wasm_fallback",
+      "questionId": "q.a.wasm_fallback",
+      "text": "Without WebGPU the model runs on WASM at 5 to 20 times slower, and the app says so in a banner instead of appearing to hang.",
+      "kind": "text",
+      "askedAt": 0,
+      "source": "adaptive",
+      "trigger": {
+        "triggerId": "local_model",
+        "becauseAnswerId": "q.idea",
+        "matchedPhrase": "no backend",
+        "matchedAt": 0
+      }
+    }
+  ]
+}
