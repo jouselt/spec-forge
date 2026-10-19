@@ -105,11 +105,11 @@ describe('self-regeneration', () => {
       .map((line) => line.trim())
       .filter((line) => line.startsWith('- ['));
 
-    // Measured, not asked for: the template path writes 15 items today and the design asks
-    // for 40 to 90. The floor is the number that exists so a regression to a shorter list
-    // fails here; the gap itself is recorded in tasks.md as an open box rather than hidden
-    // by lowering the bar to nothing.
-    expect(items.length).toBeGreaterThanOrEqual(15);
+    // Measured, not asked for: the template path writes 32 items today and the design asks
+    // for 40 to 90. The floor is the number that exists, so a regression to a shorter list
+    // fails here; the remaining gap needs new template frames and is recorded as an open box
+    // in tasks.md rather than hidden by lowering the bar to nothing.
+    expect(items.length).toBeGreaterThanOrEqual(32);
 
     for (const item of items) {
       expect(item).withContext(item.slice(0, 60)).toMatch(ITEM);

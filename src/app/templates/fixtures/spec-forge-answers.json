@@ -46,7 +46,7 @@
     {
       "id": "q.constraints",
       "questionId": "q.constraints",
-      "text": "Angular 20 with standalone components and signals, no NgRx, no component library. Everything stays in the browser: no server, no API key, no repository write, no telemetry. The template path must work with no model loaded, and the whole thing has to build and test on a clean checkout.",
+      "text": "- Initial bundle: under 500 kB raw, measured on every build\n- Suite: 610 specs, and the gate under 2 s with one staged file\n- Model: 4096 tokens of context and 879 MB for the default weights\n- Network: zero requests after the first load",
       "kind": "longtext",
       "askedAt": 0,
       "source": "base"
@@ -54,7 +54,7 @@
     {
       "id": "q.stack",
       "questionId": "q.stack",
-      "text": "Angular 20, TypeScript strict, CodeMirror 6 for the block editors, idb for the draft store, fflate for the zip behind a dynamic import, Karma for the suite. The model path is optional and talks to a narrow interface so the library never enters the initial bundle.",
+      "text": "- Angular 20 with standalone components and signals\n- TypeScript strict with strictTemplates\n- CodeMirror 6 for the block editors\n- idb for the draft store\n- fflate for the zip, behind a dynamic import\n- Karma and Jasmine for the suite\n- Docker and nginx for the static serve",
       "kind": "longtext",
       "askedAt": 0,
       "source": "base"
@@ -62,7 +62,7 @@
     {
       "id": "q.scope_out",
       "questionId": "q.scope_out",
-      "text": "Not a collaborative editor, not a project tracker, not a resume builder. It does not publish, does not deploy and does not read a repository. There is no account and nothing to sign in to.",
+      "text": "- Not a collaborative editor\n- Not a project tracker\n- Not a resume builder\n- Does not publish, deploy or read a repository\n- No account and nothing to sign in to",
       "kind": "longtext",
       "askedAt": 0,
       "source": "base"
