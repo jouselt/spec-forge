@@ -1,8 +1,8 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Answer, Block, GeneratedDoc, OriginKind, ReviewState } from '../core/question-graph';
 import { SpecFile } from '../core/mapping';
-import { countByOriginKind } from '../core/provenance';
-import { assemble } from '../templates/assembly';
+import { countByOriginKind, missingOrigin, placeholderFor } from '../core/provenance';
+import { assemble, gapQuestionFor } from '../templates/assembly';
 
 /**
  * Owns the current generated documents, the generate action, block text
@@ -37,7 +37,16 @@ export class DocumentStore {
 
   /** Replace the documents with a fresh assembly. Never appends. */
   generate(answers: Answer[]): void {
-    this.docList.set(assemble(answers));
+    this.setDocs(assemble(answers));
+  }
+
+  /**
+   * Replace the documents wholesale. `generate()` is the template path; the
+   * optional model path (Phase 9) hands its shaped documents to the store here,
+   * so every consumer reads one source and provenance is never rebuilt.
+   */
+  setDocs(docs: GeneratedDoc[]): void {
+    this.docList.set(docs);
   }
 
   /**
@@ -58,8 +67,27 @@ export class DocumentStore {
     this.setReview(id, 'confirmed');
   }
 
+  /**
+   * Reject a block. Rejecting an inference is refusing the sentence, not just
+   * flagging it: the prose goes and the section keeps its heading with a gap
+   * that names the question which would fill it. A rejected inference therefore
+   * leaves no text to export and the gap is what the export gate blocks on.
+   */
   reject(id: string): void {
-    this.setReview(id, 'rejected');
+    this.updateBlock(id, (block) => {
+      if (block.origin.kind !== 'model') {
+        return block.review === 'rejected' ? block : { ...block, review: 'rejected' };
+      }
+
+      const question = gapQuestionFor(block.file, block.section);
+
+      return {
+        ...block,
+        review: 'rejected',
+        text: placeholderFor(question),
+        origin: missingOrigin(question),
+      };
+    });
   }
 
   edit(id: string): void {

@@ -1,7 +1,8 @@
 import { DocumentStore } from './document-store.service';
 import { Answer, Block, OriginKind, narrowOrigin } from '../core/question-graph';
-import { hasModelOrigin, sourceAnswerIds } from '../core/provenance';
+import { hasModelOrigin, isPlaceholder, sourceAnswerIds } from '../core/provenance';
 import { completeAnswers } from '../templates/fixtures/answer-sets';
+import { block, doc } from '../ui/fixtures/blocks';
 
 const NO_BLOCKS: Record<OriginKind, number> = {
   answer: 0,
@@ -237,6 +238,40 @@ describe('DocumentStore', () => {
         store.edit('nope');
       }).not.toThrow();
       expect(store.docs()).toEqual(before);
+    });
+  });
+
+  describe('reject on an inferred block', () => {
+    const inferred = block('proposal', 'Goal', 0, 'model', 'Model wrote this sentence.');
+
+    beforeEach(() => {
+      store.setDocs([doc('proposal', [inferred]), doc('design', []), doc('tasks', [])]);
+    });
+
+    it('should replace the prose with a placeholder and keep the heading', () => {
+      store.reject(inferred.id);
+
+      const after = store.blocksFor('proposal')[0];
+
+      expect(after.id).toBe(inferred.id);
+      expect(after.review).toBe('rejected');
+      expect(isPlaceholder(after.text)).toBe(true);
+      expect(narrowOrigin(after.origin, 'missing')).not.toBeNull();
+      expect(after.section).toBe('Goal');
+    });
+
+    it('should leave nothing of the inference behind', () => {
+      const question = narrowOrigin(inferred.origin, 'model')?.basedOn ?? [];
+
+      store.reject(inferred.id);
+
+      const after = store.blocksFor('proposal')[0];
+
+      expect(after.text).not.toContain('Model wrote this sentence.');
+      expect(sourceAnswerIds(after.origin)).toEqual([]);
+      expect(question.length).toBeGreaterThan(0);
+      expect(store.countsFor('proposal').model).toBe(0);
+      expect(store.countsFor('proposal').missing).toBe(1);
     });
   });
 });
